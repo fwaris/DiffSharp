@@ -12,15 +12,17 @@ type ShapeCheckingTensor(shape: Shape, dtype: Dtype, device: Device) =
 
     let sample =
         match dtype with 
-        | Float32 -> box 0.0f
-        | Float64 -> box 0.0
-        | Int8 -> box 0y
-        | Byte -> box 0uy
-        | Int16 -> box 0s
-        | Int32 -> box 0
-        | Int64 -> box 0L
-        | Bool -> box false
+        | Float32 -> 0.0f :> scalar
+        | Float64 -> 0.0 :> scalar
+        | Int8 -> 0y :> scalar
+        | Byte -> 0uy :> scalar
+        | Int16 -> 0s :> scalar
+        | Int32 -> 0 :> scalar
+        | Int64 -> 0L :> scalar
+        | Bool -> false :> scalar
 
+    let mutable isMutable = false
+    let checkMutable() = if not isMutable then failwith "the tensor can't be mutated" 
     member t.MakeLike(?shape: Shape, ?device: Device, ?dtype) =
         ShapeCheckingTensor(defaultArg shape t.Shape, defaultArg dtype t.Dtype, defaultArg device t.Device) :> RawTensor
 
@@ -155,8 +157,8 @@ type ShapeCheckingTensor(shape: Shape, dtype: Dtype, device: Device) =
 
     override t1.Equals(_t2:RawTensor) : bool =  printfn "Equals"; false
     override t1.AllClose(_t2:RawTensor, _relativeTolerance, _absoluteTolerance) = printfn "AllClose"; false
-    override t.ClampT(_low, _high) = t :> _ 
-    override t.SoftplusT() = t :> _ 
+    override t.ClampT(_low, _high) = t.MakeLike()
+    override t.SoftplusT() = t.MakeLike()
     override t1.LtTT(_t2) = t1.MakeLike(dtype=Bool)
     override t1.GtTT(_t2) = t1.MakeLike(dtype=Bool)
     override t1.LeTT(_t2) = t1.MakeLike(dtype=Bool)
@@ -165,21 +167,67 @@ type ShapeCheckingTensor(shape: Shape, dtype: Dtype, device: Device) =
     override t1.NeqTT(_t2) = t1.MakeLike(dtype=Bool)
     override t.MaxIndexT() = Array.zeroCreate t.Dim
     override t.MinIndexT() = Array.zeroCreate t.Dim
-    override t1.AddTT(_t2) = t1.MakeLike()
-    override t1.AddTT0(_t2) = t1.MakeLike()
-    override t1.AddT2T1(_t2) = t1.MakeLike()
+    override t1.AddTT(_t2, _alpha) = t1.MakeLike()
+    override t1.AddTT0(_t2, _alpha) = t1.MakeLike()
     override t1.AddTTSlice(_location:Int[], _t2) = t1.MakeLike()
     override t1.SubTT(_t2) = t1.MakeLike()
-    override t1.SubT0T(t2) = t2
+    override t1.SubFromT0T(_t2) = t1.MakeLike()
     override t1.SubTT0(_t2) = t1.MakeLike()
     override t1.MulTT(_t2) = t1.MakeLike()
     override t1.MulTT0(_t2) = t1.MakeLike()
     override t1.DivTT(_t2) = t1.MakeLike()
-    override t1.DivT0T(t2) = t2
-    override t1.DivTT0(_t2) = t1 :>_
-    override t1.PowTT(_t2) = t1 :>_
-    override t1.PowT0T(t2) = t2
-    override t1.PowTT0(_t2) = t1 :>_
+    override t1.DivFromT0T(_t2) = t1.MakeLike()
+    override t1.DivTT0(_t2) = t1.MakeLike()
+    override t1.PowTT(_t2) = t1.MakeLike()
+    override t1.PowFromT0T(_t2) = t1.MakeLike()
+    override t1.PowTT0(_t2) = t1.MakeLike()
+
+    override t.ClampInPlace(_low, _high) = checkMutable()
+    override t.LtInPlace(_t2) = checkMutable()
+    override t.GtInPlace(_t2) = checkMutable()
+    override t.LeInPlace(_t2) = checkMutable()
+    override t.GeInPlace(_t2) = checkMutable()
+    override t.EqInPlace(_t2) = checkMutable()
+    override t.NeqInPlace(_t2) = checkMutable()
+    override t.AddInPlace(_t2, _alpha) = checkMutable()
+    override t.AddScalarInPlace(_t2) = checkMutable()
+    override t.AddSliceInPlace(_location, _t2) = checkMutable()
+    override t.SubInPlace(_t2) = checkMutable()
+    override t.SubScalarInPlace(_t2) = checkMutable()
+    override t.MulInPlace(_t2) = checkMutable()
+    override t.MulScalarInPlace(_t2) = checkMutable()
+    override t.DivInPlace(_t2) = checkMutable()
+    override t.DivScalarInPlace(_t2) = checkMutable()
+    override t.PowInPlace(_t2) = checkMutable()
+    override t.PowScalarInPlace(_t2) = checkMutable()
+    override t.MatMulInPlace(_t2) = checkMutable()
+    override t.NegInPlace() = checkMutable()
+    override t.SignInPlace() = checkMutable()
+    override t.FloorInPlace() = checkMutable()
+    override t.CeilInPlace() = checkMutable()
+    override t.RoundInPlace() = checkMutable()
+    override t.AbsInPlace() = checkMutable()
+    override t.ReluInPlace() = checkMutable()
+    override t.SoftplusInPlace() = checkMutable()
+    override t.SigmoidInPlace() = checkMutable()
+    override t.ExpInPlace() = checkMutable()
+    override t.LogInPlace() = checkMutable()
+    override t.Log10InPlace() = checkMutable()
+    override t.SqrtInPlace() = checkMutable()
+    override t.SinInPlace() = checkMutable()
+    override t.CosInPlace() = checkMutable()
+    override t.TanInPlace() = checkMutable()
+    override t.SinhInPlace() = checkMutable()
+    override t.CoshInPlace() = checkMutable()
+    override t.TanhInPlace() = checkMutable()
+    override t.AsinInPlace() = checkMutable()
+    override t.AcosInPlace() = checkMutable()
+    override t.AtanInPlace() = checkMutable()
+    override t.OnesInPlace() = checkMutable()
+    override t.RandomInPlace() = checkMutable()
+    override t.RandomNormalInPlace() = checkMutable()
+    override t.RandomIntInPlace(_low, _high) = checkMutable()
+    override t.ZerosInPlace() = checkMutable()
 
     override t1.MatMulTT(t2) = 
         let (t1BatchPart, t1MatrixPart), (t2BatchPart, t2MatrixPart) = Shape.checkCanMatmul t1.Shape t2.Shape
@@ -231,26 +279,28 @@ type ShapeCheckingTensor(shape: Shape, dtype: Dtype, device: Device) =
         | None -> t.MakeLike(Shape.scalar)
         | Some dtype -> t.MakeLike(Shape.scalar, dtype=dtype)
     override t.SumT2Dim0() = t.MakeLike(Shape [|t.Shape.[1]|])
-    override t.SignT() = t :> _ 
-    override t.FloorT() = t :> _ 
-    override t.CeilT() = t :> _ 
-    override t.RoundT() = t :> _ 
-    override t.AbsT() = t :> _ 
-    override t.ReluT() = t :> _ 
-    override t.SigmoidT() = t :> _ 
-    override t.ExpT() = t :> _ 
-    override t.LogT() = t :> _ 
-    override t.Log10T() = t :> _ 
-    override t.SqrtT() = t :> _ 
-    override t.SinT() = t :> _ 
-    override t.CosT() = t :> _ 
-    override t.TanT() = t :> _ 
-    override t.SinhT() = t :> _ 
-    override t.CoshT() = t :> _ 
-    override t.TanhT() = t :> _ 
-    override t.AsinT() = t :> _ 
-    override t.AcosT() = t :> _ 
-    override t.AtanT() = t :> _ 
+    override t.SignT() = t.MakeLike()
+    override t.FloorT() = t.MakeLike()
+    override t.CeilT() = t.MakeLike()
+    override t.RoundT() = t.MakeLike()
+    override t.AbsT() = t.MakeLike()
+    override t.ReluT() = t.MakeLike()
+    override t.SigmoidT() = t.MakeLike()
+    override t.ExpT() = t.MakeLike()
+    override t.LogT() = t.MakeLike()
+    override t.Log10T() = t.MakeLike()
+    override t.SqrtT() = t.MakeLike()
+    override t.SinT() = t.MakeLike()
+    override t.CosT() = t.MakeLike()
+    override t.TanT() = t.MakeLike()
+    override t.SinhT() = t.MakeLike()
+    override t.CoshT() = t.MakeLike()
+    override t.TanhT() = t.MakeLike()
+    override t.AsinT() = t.MakeLike()
+    override t.AcosT() = t.MakeLike()
+    override t.AtanT() = t.MakeLike()
+    override t.SetMutable() = isMutable <- true
+    override t.IsMutable = isMutable
 
 type ShapeCheckingBackendTensorStatics() = 
 
@@ -264,7 +314,7 @@ type ShapeCheckingBackendTensorStatics() =
     override _.Zeros(shape:Shape, dtype, device) = ShapeCheckingTensor(shape, dtype, device) :> _
     override _.Empty(shape:Shape, dtype, device) = ShapeCheckingTensor(shape, dtype, device) :> _
     override _.Ones(shape:Shape, dtype, device) = ShapeCheckingTensor(shape, dtype, device) :> _
-    override _.Full(shape:Shape, _value:obj, dtype, device) = ShapeCheckingTensor(shape, dtype, device) :> _
+    override _.Full(shape:Shape, _value:scalar, dtype, device) = ShapeCheckingTensor(shape, dtype, device) :> _
     override _.Random(shape:Shape, dtype, device) = ShapeCheckingTensor(shape, dtype, device) :> _
     override _.RandomNormal(shape:Shape, dtype, device) = ShapeCheckingTensor(shape, dtype, device) :> _
     override _.RandomInt(shape:Shape, _low:int, _high:int, dtype, device) = ShapeCheckingTensor(shape, dtype, device) :> _
