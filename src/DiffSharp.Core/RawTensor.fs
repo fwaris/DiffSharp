@@ -35,7 +35,7 @@ type BackendTensorStatics() =
     abstract Ones: shape:Shape * dtype: Dtype * device: Device -> RawTensor
 
     /// Gets a tensor filled with the given value for the given shape and device
-    abstract Full: shape:Shape * value: obj * dtype: Dtype * device: Device -> RawTensor
+    abstract Full: shape:Shape * value: scalar * dtype: Dtype * device: Device -> RawTensor
 
     /// Gets a tensor filled with random values for the given shape and device
     abstract Random: shape:Shape * dtype: Dtype * device: Device -> RawTensor
@@ -69,7 +69,7 @@ type BackendTensorStatics() =
         hook.Get(?backend=backend)
 
 /// <summary>
-///   Represents a raw (i.e. non-differentiable) tensor implemented by a DiffSharp backend.
+///   Represents a raw (i.e. non-differentiable immutable) tensor implemented by a DiffSharp backend.
 /// </summary>
 ///
 /// <remarks>
@@ -80,29 +80,29 @@ type BackendTensorStatics() =
 type RawTensor() =
 
     /// Gets the shape of the tensor
-    abstract Shape : Shape
+    abstract Shape: Shape
 
     /// Gets the dimensionality of the tensor
-    abstract Dim : int
+    abstract Dim: int
 
     /// Gets the number of elements in the tensor
-    abstract Nelement : int
+    abstract Nelement: int
 
     /// Gets the element storage type for the tensor
-    abstract Dtype : Dtype
+    abstract Dtype: Dtype
 
     /// Gets the device for the tensor
-    abstract Device : Device
+    abstract Device: Device
 
     /// Gets the device type for the tensor
-    abstract DeviceType : DeviceType
+    abstract DeviceType: DeviceType
 
     /// Gets the backend for the tensor
-    abstract Backend : Backend
+    abstract Backend: Backend
 
     /// Gets a handle to the underlying representation of the the tensor. For example, if the Torch
     /// backend is used this will be the corresponding TorchSharp TorchTensor.
-    abstract Handle : obj
+    abstract Handle: obj
 
     override t.ToString() = t.GetString("")
     
@@ -219,6 +219,12 @@ type RawTensor() =
 
         statics.CreateFromFlatArray(data, Shape.constant shape, dtype2, device)
 
+    static member CreateFromFlatArray(values: Array, shape:Shape, ?dtype, ?device, ?backend) =
+        let statics = BackendTensorStatics.Get(?backend=backend)
+        let dtype = defaultArg dtype Dtype.Default
+        let device = defaultArg device Device .Default
+        statics.CreateFromFlatArray(values, shape, dtype, device)
+
     /// Gets a tensor filled with values drawn from the given .NET object for the
     /// given configuration settings, defaulting to the configuration settings of the object tensor.
     member t.CreateLike(values: obj, ?dtype: Dtype, ?device: Device, ?backend: Backend) =
@@ -249,7 +255,7 @@ type RawTensor() =
 
     /// Gets a tensor filled with the given scalar value for the given shape and configuration settings,
     /// defaulting to the configuration settings of the object tensor
-    member t.FullLike(shape: Shape, value: obj, ?dtype: Dtype, ?device: Device, ?backend: Backend) =
+    member t.FullLike(shape: Shape, value: scalar, ?dtype: Dtype, ?device: Device, ?backend: Backend) =
         RawTensor.Full(shape, value, dtype=defaultArg dtype t.Dtype, device=defaultArg device t.Device, backend=defaultArg backend t.Backend)
 
     /// Gets a tensor filled with random values for the given shape and configuration settings,
@@ -268,7 +274,7 @@ type RawTensor() =
         RawTensor.RandomInt(shape=shape, low=low, high=high, dtype=defaultArg dtype t.Dtype, device=defaultArg device t.Device, backend=defaultArg backend t.Backend)
 
     /// Clone the underlying storage of the tensor.
-    abstract Clone : unit -> RawTensor
+    abstract Clone: unit -> RawTensor
 
     /// Expand the shape of the tensor.
     abstract Expand: newShape: Shape -> RawTensor
@@ -341,28 +347,25 @@ type RawTensor() =
     abstract NeqTT: t2: RawTensor -> RawTensor
 
     /// Returns a boolean tensor where each element indicates if the corresponding element in the tensor is an infinity value
-    abstract IsInfT : unit -> RawTensor
+    abstract IsInfT: unit -> RawTensor
 
     /// Returns a boolean tensor where each element indicates if the corresponding element in the tensor is a NaN value
-    abstract IsNaNT : unit -> RawTensor
+    abstract IsNaNT: unit -> RawTensor
 
     /// Gets a .NET object representing the value of the tensor at the given indexes
-    abstract GetItem : [<System.ParamArray>] indexes: int[] -> obj 
+    abstract GetItem: [<System.ParamArray>] indexes: int[] -> scalar
 
     /// Gets the index of a maximum value of the tensor
-    abstract MaxIndexT : unit -> int[]
+    abstract MaxIndexT: unit -> int[]
 
     /// Gets the index of a minimum value of the tensor
-    abstract MinIndexT : unit -> int[]
+    abstract MinIndexT: unit -> int[]
 
     /// Returns the element-wise addition of the two tensors
-    abstract AddTT : RawTensor -> RawTensor
+    abstract AddTT: RawTensor * ?alpha: scalar -> RawTensor
 
-    /// Returns the element-wise addition of two scalars
-    abstract AddTT0 : RawTensor -> RawTensor
-
-    /// Returns the element-wise addition of the matrix and vector tensors
-    abstract AddT2T1: RawTensor -> RawTensor
+    /// Returns the element-wise addition of a tensor and a scalar
+    abstract AddTT0: b: scalar * ?alpha: scalar -> RawTensor
 
     /// Adds a slice of <c>t2</c> at the given location to the tensor
     abstract AddTTSlice: location: Int[] * t2: RawTensor -> RawTensor
@@ -372,40 +375,40 @@ type RawTensor() =
 
     /// Returns the element-wise subtraction of the scalar and a tensor, where the scalar is logically
     /// broadcast to the same shape as the tensor
-    abstract SubT0T: t2: RawTensor -> RawTensor
+    abstract SubFromT0T: t1: scalar -> RawTensor
 
     /// Returns the element-wise subtraction of the tensor and a scalar, where the scalar is logically
     /// broadcast to the same shape as the tensor
-    abstract SubTT0: t2: RawTensor -> RawTensor
+    abstract SubTT0: t2: scalar -> RawTensor
 
     /// Returns the element-wise multiplication of two tensors
     abstract MulTT: t2: RawTensor -> RawTensor
 
     /// Returns the element-wise multiplication of a tensor and a scalar, where the scalar is logically
     /// broadcast to the same shape as the tensor
-    abstract MulTT0: t2: RawTensor -> RawTensor
+    abstract MulTT0: t2: scalar -> RawTensor
 
     /// Returns the element-wise division of two tensors
     abstract DivTT: t2: RawTensor -> RawTensor
 
     /// Returns the element-wise division of a scalar by a tensor, where the scalar is logically
     /// broadcast to the same shape as the tensor
-    abstract DivT0T: t2: RawTensor -> RawTensor
+    abstract DivFromT0T: t1: scalar -> RawTensor
 
     /// Returns the element-wise division of a tensor by a scalar, where the scalar is logically
     /// broadcast to the same shape as the tensor
-    abstract DivTT0: t2: RawTensor -> RawTensor
+    abstract DivTT0: t2: scalar -> RawTensor
 
     /// Returns the element-wise exponentiation of two tensors
     abstract PowTT: t2: RawTensor -> RawTensor
 
     /// Returns the element-wise exponentiation of a scalar and a tensor, where the scalar is logically
     /// broadcast to the same shape as the tensor
-    abstract PowT0T: t2: RawTensor -> RawTensor
+    abstract PowFromT0T: t1: scalar -> RawTensor
 
     /// Returns the element-wise exponentiation of a tensor and a scalar, where the scalar is logically
     /// broadcast to the same shape as the tensor
-    abstract PowTT0: t2: RawTensor -> RawTensor
+    abstract PowTT0: t2: scalar -> RawTensor
 
     /// Returns the matrix multiplication of two tensors
     abstract MatMulTT: t2: RawTensor -> RawTensor
@@ -438,13 +441,13 @@ type RawTensor() =
     abstract Conv3D: kernel: RawTensor * strides: Int[] * padding: Int[] -> RawTensor
 
     /// Returns the element-wise negation of the tensor
-    abstract NegT : unit -> RawTensor
+    abstract NegT: unit -> RawTensor
 
     /// Returns the scalar tensor for the summation of all elements in the tensor 
-    abstract SumT : ?resultType: Dtype -> RawTensor
+    abstract SumT: ?resultType: Dtype -> RawTensor
 
     /// Returns a vector representing the summation of each the matrix along the first dimension 
-    abstract SumT2Dim0 : unit -> RawTensor
+    abstract SumT2Dim0: unit -> RawTensor
 
     /// Returns the transpose of the tensor between the given dimensions
     abstract TransposeT: dim0: int * dim1: int -> RawTensor
@@ -611,15 +614,163 @@ type RawTensor() =
     /// Returns a .NET object for the value of a scalar tensor
     member t.ToScalar() =
         match t.Dim with
-        | 0 -> t.ToValues()
-        | _ -> failwithf "Cannot convert %Ad Tensor to scalar" t.Dim
+        | 0 -> (t.ToValues() :?> scalar)
+        | _ -> failwithf "Cannot convert %Ad tensor to scalar" t.Dim
 
     /// Returns a .NET array object for the values of a non-scalar tensor
     member t.ToArray() =
         match t.Dim with
-        | 0 -> failwithf "Cannot convert scalar Tensor to array"
+        | 0 -> failwithf "Cannot convert scalar tensor to array"
         | _ ->
             match t.ToValues() with 
             | :? System.Array as a -> a
             | _ -> failwithf "ToValue() should return an array but returned type %A" (t.GetType())
+
+    /// A backdoor to switch this tensor to be usable as a mutable tensor. You should have a unique handle to
+    /// this tensor for the entire time it is being used as a mutable tensor.
+    abstract SetMutable: unit -> unit
+
+    abstract IsMutable: bool
+
+    /// Modifies the tensor by with values constrained by the corresponding elements in the low/high tensors.
+    abstract ClampInPlace: low: RawTensor * high: RawTensor -> unit
+
+    /// Modifies the tensor by comparing each element pairwise with the corresponding element in <c>t2</c>
+    abstract LtInPlace: t2: RawTensor -> unit
+
+    /// Modifies the tensor by comparing each element pairwise with the corresponding element in <c>t2</c>
+    abstract GtInPlace: t2: RawTensor -> unit
+
+    /// Modifies the tensor by comparing each element pairwise with the corresponding element in <c>t2</c>
+    abstract LeInPlace: t2: RawTensor -> unit
+
+    /// Modifies the tensor by comparing each element pairwise with the corresponding element in <c>t2</c>
+    abstract GeInPlace: t2: RawTensor -> unit
+
+    /// Modifies the tensor by comparing each element pairwise with the corresponding element in <c>t2</c>
+    abstract EqInPlace: t2: RawTensor -> unit
+
+    /// Modifies the tensor by comparing each element pairwise with the corresponding element in <c>t2</c>
+    abstract NeqInPlace: t2: RawTensor -> unit
+
+    /// Modifies the tensor by the element-wise addition of the two tensors
+    abstract AddInPlace: RawTensor * ?alpha: scalar -> unit
+
+    /// Modifies the tensor by the element-wise addition of two scalars
+    abstract AddScalarInPlace: b: scalar -> unit
+
+    /// Adds a slice of <c>t2</c> at the given location to the tensor
+    abstract AddSliceInPlace: location: Int[] * t2: RawTensor -> unit
+
+    /// Modifies the tensor by the element-wise subtraction of two tensors
+    abstract SubInPlace: t2: RawTensor -> unit
+
+    /// Modifies the tensor by the element-wise subtraction of the tensor and a scalar, where the scalar is logically
+    /// broadcast to the same shape as the tensor
+    abstract SubScalarInPlace: b: scalar -> unit
+
+    /// Modifies the tensor by the element-wise multiplication of two tensors
+    abstract MulInPlace: t2: RawTensor -> unit
+
+    /// Modifies the tensor by the element-wise multiplication of a tensor and a scalar, where the scalar is logically
+    /// broadcast to the same shape as the tensor
+    abstract MulScalarInPlace: b: scalar -> unit
+
+    /// Modifies the tensor by the element-wise division of two tensors
+    abstract DivInPlace: t2: RawTensor -> unit
+
+    /// Modifies the tensor by the element-wise division of a tensor by a scalar, where the scalar is logically
+    /// broadcast to the same shape as the tensor
+    abstract DivScalarInPlace: t2: scalar  -> unit
+
+    /// Modifies the tensor by the element-wise exponentiation of two tensors
+    abstract PowInPlace: t2: RawTensor -> unit
+
+    /// Modifies the tensor by the element-wise exponentiation of a tensor and a scalar, where the scalar is logically
+    /// broadcast to the same shape as the tensor
+    abstract PowScalarInPlace: t2: scalar -> unit
+
+    /// Modifies the tensor by the matrix multiplication of two tensors
+    abstract MatMulInPlace: t2: RawTensor -> unit
+
+    /// Modifies the tensor by the element-wise negation of the tensor
+    abstract NegInPlace: unit -> unit
+
+    /// Modifies the tensor by the element-wise sign of the tensor
+    abstract SignInPlace: unit -> unit
+
+    /// Modifies the tensor by the element-wise integer floor of the tensor
+    abstract FloorInPlace: unit -> unit
+
+    /// Modifies the tensor by the element-wise integer ceiling of the tensor
+    abstract CeilInPlace: unit -> unit
+
+    /// Modifies the tensor by the element-wise rounding of the tensor
+    abstract RoundInPlace: unit -> unit
+
+    /// Modifies the tensor by the element-wise absolute value of the tensor
+    abstract AbsInPlace: unit -> unit
+
+    /// Modifies the tensor by the element-wise ReLU of the tensor
+    abstract ReluInPlace: unit -> unit
+
+    /// Modifies the tensor by the element-wise softplus of the tensor
+    abstract SoftplusInPlace: unit -> unit
+
+    /// Modifies the tensor by the element-wise sigmoid of the tensor
+    abstract SigmoidInPlace: unit -> unit
+
+    /// Modifies the tensor by the element-wise natural exponentiation of the tensor
+    abstract ExpInPlace: unit -> unit
+
+    /// Modifies the tensor by the element-wise natural logarithm of the tensor
+    abstract LogInPlace: unit -> unit
+
+    /// Modifies the tensor by the element-wise base10 logarithm of the tensor
+    abstract Log10InPlace: unit -> unit
+
+    /// Modifies the tensor by the element-wise square root of the tensor
+    abstract SqrtInPlace: unit -> unit
+
+    /// Modifies the tensor by the element-wise sine of the tensor
+    abstract SinInPlace: unit -> unit
+
+    /// Modifies the tensor by the element-wise cosine of the tensor
+    abstract CosInPlace: unit -> unit
+
+    /// Modifies the tensor by the element-wise tangent of the tensor
+    abstract TanInPlace: unit -> unit
+
+    /// Modifies the tensor by the element-wise sinh of the tensor
+    abstract SinhInPlace: unit -> unit
+
+    /// Modifies the tensor by the element-wise cosh of the tensor
+    abstract CoshInPlace: unit -> unit
+
+    /// Modifies the tensor by the element-wise tanh of the tensor
+    abstract TanhInPlace: unit -> unit
+
+    /// Modifies the tensor by the element-wise asin of the tensor
+    abstract AsinInPlace: unit -> unit
+
+    /// Modifies the tensor by the element-wise cos of the tensor
+    abstract AcosInPlace: unit -> unit
+
+    /// Modifies the tensor by the element-wise atan of the tensor
+    abstract AtanInPlace: unit -> unit
+
+    /// Modifies the tensor by setting all values to one
+    abstract OnesInPlace: unit -> unit
+
+    /// Modifies the tensor by setting all values to zero
+    abstract ZerosInPlace: unit -> unit
+
+    /// Modifies the tensor by setting it to random values taken from a uniform distribution in [0, 1).
+    abstract RandomInPlace: unit -> unit
+
+    /// Modifies the tensor by setting all values taken from a normal distribution with mean 0 and variance 1.
+    abstract RandomNormalInPlace: unit -> unit
+
+    /// Gets a tensor filled with random integers from the given range 
+    abstract RandomIntInPlace: low:int * high:int -> unit
 

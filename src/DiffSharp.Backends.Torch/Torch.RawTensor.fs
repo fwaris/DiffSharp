@@ -25,6 +25,18 @@ module internal Utils =
         | Dtype.Float32 -> ScalarType.Float
         | Dtype.Float64 -> ScalarType.Double
 
+    let toTorchScalar (x: scalar) =
+        match x with 
+        | :? single as x -> TorchScalar.op_Implicit x
+        | :? double as x -> TorchScalar.op_Implicit x
+        | :? int32 as x -> TorchScalar.op_Implicit x
+        | :? int64 as x -> TorchScalar.op_Implicit x
+        | :? int8 as x -> TorchScalar.op_Implicit x
+        | :? uint8 as x -> TorchScalar.op_Implicit x
+        | :? int16 as x -> TorchScalar.op_Implicit x
+        | :? bool as x -> TorchScalar.op_Implicit x
+        | _ -> failwithf "unknown scalar type '%A'" x
+
     let fromTorchType ttype =
         match ttype with 
         | ScalarType.Bool -> Dtype.Bool
@@ -80,6 +92,9 @@ type TorchRawTensor(tt: TorchTensor, shape: Shape, dtype: Dtype, device: Device)
 
     let device = () // make sure 'device' isn't accessed in a member and stored as a field
 #endif
+    let mutable tt = tt
+    let mutable isMutable = false
+    let checkMutable() = if not isMutable then failwith "the tensor can't be mutated" 
     do ignore device
 
     override _.Shape = shape
@@ -180,14 +195,14 @@ type TorchRawTensor(tt: TorchTensor, shape: Shape, dtype: Dtype, device: Device)
 
         let obj = 
             match dtype with 
-            | Dtype.Bool -> box (item.DataItem<bool>())
-            | Dtype.Byte -> box (item.DataItem<byte>())
-            | Dtype.Int8 -> box (item.DataItem<int8>())
-            | Dtype.Int16 -> box (item.DataItem<int16>())
-            | Dtype.Int32 -> box (item.DataItem<int32>())
-            | Dtype.Int64 -> box (item.DataItem<int64>())
-            | Dtype.Float32 -> box (item.DataItem<float32>())
-            | Dtype.Float64 -> box (item.DataItem<double>())
+            | Dtype.Bool -> item.DataItem<bool>() :> scalar
+            | Dtype.Byte -> item.DataItem<byte>() :> scalar
+            | Dtype.Int8 -> item.DataItem<int8>() :> scalar
+            | Dtype.Int16 -> item.DataItem<int16>() :> scalar
+            | Dtype.Int32 -> item.DataItem<int32>() :> scalar
+            | Dtype.Int64 -> item.DataItem<int64>() :> scalar
+            | Dtype.Float32 -> item.DataItem<float32>() :> scalar
+            | Dtype.Float64 -> item.DataItem<double>() :> scalar
         obj
 
     member t.ToValuesTyped<'T, 'T2>(conv) : obj =
@@ -195,7 +210,7 @@ type TorchRawTensor(tt: TorchTensor, shape: Shape, dtype: Dtype, device: Device)
         let tt = torchMoveTo tt Device.CPU
 
         match t.Shape.Values with
-        | [|  |] -> t.GetItem()
+        | [|  |] -> t.GetItem() |> box
         | [| d0 |] -> upcast Array.init<'T> d0 (fun i -> tt.[int64 i].DataItem<'T2>() |> conv)
         | [| d0; d1 |] -> upcast Array2D.init<'T> d0 d1 (fun i j -> tt.[int64 i, int64 j].DataItem<'T2>() |> conv)
         | [| d0; d1; d2 |]  -> upcast Array3D.init<'T> d0 d1 d2 (fun i j k -> tt.[int64 i, int64 j, int64 k].DataItem<'T2>() |> conv)
@@ -427,17 +442,18 @@ type TorchRawTensor(tt: TorchTensor, shape: Shape, dtype: Dtype, device: Device)
         | Dtype.Bool -> t.Cast(Dtype.Int8).MinIndexT() // TODO: could likely be improved
         | _ -> t.NegT().MaxIndexT()
 
-    override t1.AddTT(t2) =
-        let result = tt.Add(t2.TorchTensor) 
+    override t1.AddTT(t2, alpha) =
+        let result = 
+            match alpha with 
+            | Some v -> tt.Add(t2.TorchTensor, toTorchScalar v)
+            | None -> tt.Add(t2.TorchTensor)
         t1.MakeLike(result)
 
-    override t1.AddTT0(t2) =
-        let t2v = t2.TorchTensor.Item()
-        let result = tt.Add(t2v) 
-        t1.MakeLike(result)
-
-    override t1.AddT2T1(t2) = 
-        let result = tt.Add(t2.TorchTensor) 
+    override t1.AddTT0(t2: scalar, ?alpha: scalar) =
+        let result = 
+            match alpha with 
+            | Some v -> tt.Add(toTorchScalar t2, toTorchScalar v)
+            | None -> tt.Add(toTorchScalar t2)
         t1.MakeLike(result)
 
     override t1.AddTTSlice(location:Int[], t2) =
@@ -463,14 +479,11 @@ type TorchRawTensor(tt: TorchTensor, shape: Shape, dtype: Dtype, device: Device)
         let result = tt.Sub(t2.TorchTensor)
         t1.MakeLike(result)
 
-    override t1.SubT0T(t2) =
-        let t1v = t1.TorchTensor.Item()
-        let result = t1v - t2.TorchTensor
-        (t2 :?> TorchRawTensor).MakeLike(result)
+    override t2.SubFromT0T(t1:scalar) = t2.SubTT0(t1).NegT()
 
-    override t1.SubTT0(t2) = 
-        let t2v = t2.TorchTensor.Item()
-        let result = tt.Sub(t2v)
+    override t1.SubTT0(t2: scalar) = 
+        //let t2v = t2.TorchTensor.Item()
+        let result = tt.Sub(toTorchScalar t2)
         t1.MakeLike(result)
 
     override t1.MulTT(t2) = 
@@ -478,8 +491,10 @@ type TorchRawTensor(tt: TorchTensor, shape: Shape, dtype: Dtype, device: Device)
         t1.MakeLike(result)
 
     override t1.MulTT0(t2) = 
-        let t2v = t2.TorchTensor.Item()
-        let result = tt.Mul(t2v)
+        match dtype with 
+        | Dtype.Bool -> opNotSupported "MulTT0" dtype
+        | _ ->
+        let result = tt.Mul(toTorchScalar t2)
         t1.MakeLike(result)
 
     override t1.DivTT(t2) = 
@@ -487,22 +502,27 @@ type TorchRawTensor(tt: TorchTensor, shape: Shape, dtype: Dtype, device: Device)
         | Dtype.Bool -> opNotSupported2 "DivTT" dtype t2.Dtype
         | _ ->
         let result = tt.Div(t2.TorchTensor)
+        // see https://github.com/DiffSharp/DiffSharp/issues/239
+        let result = if dtype.IsIntegral then result.ToType(ScalarType.Int).ToType(toTorchType dtype) else result
         t1.MakeLike(result)
 
-    override t1.DivT0T(t2) =
+    override t2.DivFromT0T(t1: scalar) =
         match dtype with 
-        | Dtype.Bool -> opNotSupported2 "DivTT" dtype t2.Dtype
+        | Dtype.Bool -> opNotSupported "DivT0T" dtype
         | _ ->
-        let t1v = t1.TorchTensor.Item()
-        let result = t1v / t2.TorchTensor
-        (t2 :?> TorchRawTensor).MakeLike(result)
+        let t1 = t2.FullLike(Shape.scalar, t1)
+        let result = t1.TorchTensor.Div(t2.TorchTensor)
+        // see https://github.com/DiffSharp/DiffSharp/issues/239
+        let result = if dtype.IsIntegral then result.ToType(ScalarType.Int).ToType(toTorchType dtype) else result
+        t2.MakeLike(result)
 
     override t1.DivTT0(t2) = 
         match dtype with 
-        | Dtype.Bool -> opNotSupported2 "DivTT" dtype t2.Dtype
+        | Dtype.Bool -> opNotSupported "DivTT0" dtype
         | _ ->
-        let t2v = t2.TorchTensor.Item()
-        let result = tt.Div(t2v)
+        let result = tt.Div(toTorchScalar t2)
+        // see https://github.com/DiffSharp/DiffSharp/issues/239
+        let result = if dtype.IsIntegral then result.ToType(toTorchType dtype) else result
         t1.MakeLike(result)
 
     override t1.PowTT(t2) =
@@ -512,18 +532,19 @@ type TorchRawTensor(tt: TorchTensor, shape: Shape, dtype: Dtype, device: Device)
         let result = tt.Pow(t2.TorchTensor)
         t1.MakeLike(result)
 
-    override t1.PowT0T(t2) = 
+    override t2.PowFromT0T(t1:scalar) = 
         match dtype with 
         | Dtype.IntegralOrBool -> opNotSupported "PowT0T" dtype
         | _ -> 
+        let t1 = t2.FullLike(Shape.scalar, t1)
         let result = t1.Expand(t2.Shape).TorchTensor.Pow(t2.TorchTensor)
-        (t2 :?> TorchRawTensor).MakeLike(result)
+        t2.MakeLike(result)
 
-    override t1.PowTT0(t2) =
+    override t1.PowTT0(t2:scalar) =
         match dtype with 
         | Dtype.IntegralOrBool -> opNotSupported "PowTT0" dtype
         | _ -> 
-        let t2v = t2.TorchTensor.Item()
+        let t2v = toTorchScalar t2
         let result = tt.Pow(t2v)
         t1.MakeLike(result)
 
@@ -828,6 +849,128 @@ type TorchRawTensor(tt: TorchTensor, shape: Shape, dtype: Dtype, device: Device)
             info.AddValue("shape", t.Shape)
             info.AddValue("data", tCpu.ToRawData())
 
+
+    override _.ClampInPlace(low, high) = 
+        // TODO - next version of TorchSharp will have in place version of this
+        checkMutable()
+        tt <- tt.Clamp(low.TorchTensor.Item(), high.TorchTensor.Item())
+
+    override _.LtInPlace(t2) = checkMutable(); tt.LtInPlace(t2.TorchTensor) |> ignore
+
+    override _.GtInPlace(t2) = checkMutable(); tt.GtInPlace(t2.TorchTensor) |> ignore
+
+    override _.LeInPlace(t2) = checkMutable(); tt.LeInPlace(t2.TorchTensor) |> ignore
+
+    override _.GeInPlace(t2) = checkMutable(); tt.GeInPlace(t2.TorchTensor) |> ignore
+
+    override _.EqInPlace(t2) = checkMutable(); tt.EqInPlace(t2.TorchTensor) |> ignore
+
+    override _.NeqInPlace(t2) = checkMutable(); tt.NeInPlace(t2.TorchTensor) |> ignore
+
+    override _.AddInPlace(t2, alpha) =
+        checkMutable()
+        match alpha with 
+        | Some v -> tt.AddInPlace(t2.TorchTensor, toTorchScalar v) |> ignore
+        | None -> tt.AddInPlace(t2.TorchTensor) |> ignore
+
+    override _.AddScalarInPlace(t2) = checkMutable(); tt.AddInPlace(toTorchScalar t2) |> ignore
+
+    // TODO - this should be faster
+    override t1.AddSliceInPlace(location, t2) = 
+        checkMutable()
+        Shape.checkCanAddSlice t1.Shape location t2.Shape
+        let shape1 = t1.Shape
+        let shape2 = t2.Shape
+        let expandedShape2 = Shape.unsqueezeAs shape2 shape1
+        let t2Expanded = t2.TorchTensor.Expand(toTorchShape expandedShape2)
+        let mutable t1Slice = tt // will share memory with res
+        for d in 0 .. location.Length - 1 do 
+            let len2 = expandedShape2.[d]
+            if location.[d].Value <> 0 || len2 <> shape1.[d] then 
+                t1Slice <- t1Slice.Narrow(int64 d, int64 location.[d].Value, int64 len2.Value)
+        t1Slice.AddInPlace(t2Expanded) |> ignore
+
+    override _.SubInPlace(t2) = checkMutable(); tt.SubInPlace(t2.TorchTensor) |> ignore
+
+    override _.SubScalarInPlace(t2) = checkMutable(); tt.SubInPlace(toTorchScalar t2) |> ignore
+
+    override _.MulInPlace(t2) = checkMutable(); tt.MulInPlace(t2.TorchTensor) |> ignore
+
+    override _.MulScalarInPlace(t2) = checkMutable(); tt.MulInPlace(toTorchScalar t2) |> ignore
+
+    override _.DivInPlace(t2) = checkMutable(); tt.DivInPlace(t2.TorchTensor) |> ignore
+
+    override _.DivScalarInPlace(t2) = checkMutable(); tt.DivInPlace(toTorchScalar t2) |> ignore
+
+    override _.PowInPlace(t2) = checkMutable(); tt.PowInPlace(t2.TorchTensor) |> ignore
+
+    override _.PowScalarInPlace(t2) = checkMutable(); tt.PowInPlace(toTorchScalar t2) |> ignore
+
+    override _.MatMulInPlace(t2) = checkMutable(); tt <- tt.MatMul(t2.TorchTensor) 
+
+    override _.NegInPlace() = checkMutable(); tt.NegInPlace() |> ignore
+
+    override _.SignInPlace() = checkMutable(); tt.SignInPlace() |> ignore
+
+    override _.FloorInPlace() = checkMutable(); tt.FloorInPlace() |> ignore
+
+    override _.CeilInPlace() = checkMutable(); tt.CeilInPlace() |> ignore
+
+    override _.RoundInPlace() = checkMutable(); tt.RoundInPlace() |> ignore
+
+    override _.AbsInPlace() = checkMutable(); tt.AbsInPlace() |> ignore
+
+    override _.ReluInPlace() = checkMutable(); tt.ReluInPlace() |> ignore
+
+    override _.SoftplusInPlace() = checkMutable(); tt <- tt.Softplus() 
+
+    override _.SigmoidInPlace() = checkMutable(); tt <- tt.Sigmoid() 
+
+    override _.ExpInPlace() = checkMutable(); tt <- tt.Exp()
+
+    override _.LogInPlace() = checkMutable(); tt.LogInPlace() |> ignore
+
+    override _.Log10InPlace() = checkMutable(); tt.Log10InPlace() |> ignore
+
+    override _.SqrtInPlace() = checkMutable(); tt.SqrtInPlace() |> ignore
+
+    override _.SinInPlace() = checkMutable(); tt.SinInPlace() |> ignore
+
+    override _.CosInPlace() = checkMutable(); tt.CosInPlace() |> ignore
+
+    override _.TanInPlace() = checkMutable(); tt.TanInPlace() |> ignore
+
+    override _.SinhInPlace() = checkMutable(); tt.SinhInPlace() |> ignore
+
+    override _.CoshInPlace() = checkMutable(); tt.CoshInPlace() |> ignore
+
+    override _.TanhInPlace() = checkMutable(); tt.TanhInPlace() |> ignore
+
+    override _.AsinInPlace() = checkMutable(); tt.AsinInPlace() |> ignore
+
+    override _.AcosInPlace() = checkMutable(); tt.AcosInPlace() |> ignore
+
+    override _.AtanInPlace() = checkMutable(); tt.AtanInPlace() |> ignore
+
+    // TODO - next version of TorchSharp will have in place version of this
+    override t.OnesInPlace() = checkMutable(); tt <- (RawTensor.Ones(shape, dtype, t.Device, Backend.Torch) :?> TorchRawTensor).TorchTensor
+
+    // TODO - next version of TorchSharp will have in place version of this
+    override t.ZerosInPlace() = checkMutable(); tt <- (RawTensor.Zeros(shape, dtype, t.Device, Backend.Torch) :?> TorchRawTensor).TorchTensor
+
+    // TODO - next version of TorchSharp will have in place version of this
+    override t.RandomInPlace() = checkMutable(); tt <- (RawTensor.Random(shape, dtype, t.Device, Backend.Torch) :?> TorchRawTensor).TorchTensor
+
+    // TODO - next version of TorchSharp will have in place version of this
+    override t.RandomNormalInPlace() = checkMutable(); tt <- (RawTensor.RandomNormal(shape, dtype, t.Device, Backend.Torch) :?> TorchRawTensor).TorchTensor
+
+    // TODO - next version of TorchSharp will have in place version of this
+    override t.RandomIntInPlace(low, high) = checkMutable(); tt <- (RawTensor.RandomInt(shape, low, high, dtype, t.Device, Backend.Torch) :?> TorchRawTensor).TorchTensor
+
+    override t.SetMutable() = isMutable <- true
+
+    override t.IsMutable = isMutable
+
 /// The parameterized implementation of the static ops. Use a generic class to
 /// make sure we get the correlation with .NET types correct and systematic
 type TorchTensorOps<'T, 'T2>
@@ -842,7 +985,7 @@ type TorchTensorOps<'T, 'T2>
         random: TorchShape  * Device -> TorchTensor,
         randomN: TorchShape  * Device -> TorchTensor,
         randomIntegers: TorchShape * int * int * Device -> TorchTensor,
-        valueFromObj: obj -> 'T,
+        valueFromScalar: scalar -> 'T,
         scalarFromConvValue: 'T2 -> TorchScalar) = 
 
     member _.Zero(device) = TorchRawTensor(torchMoveTo (fromScalar (conv zero)) device, Shape.scalar, dtype, device) :> RawTensor 
@@ -854,9 +997,9 @@ type TorchTensorOps<'T, 'T2>
     member _.RandomNormal(shape:Shape, device) = TorchRawTensor(randomN(toTorchShape shape, device), shape, dtype, device) :> RawTensor
     member _.RandomInt(shape, low, high, device) = TorchRawTensor(randomIntegers(toTorchShape shape, low, high, device), shape, dtype, device) :> RawTensor
 
-    member _.Full(shape:Shape, value:obj, device) =
-        let t = zeros(toTorchShape shape, device)
-        t.FillInPlace(scalarFromConvValue (conv (valueFromObj value))) |> ignore
+    member _.Full(shape:Shape, value:scalar, device) =
+        let t = empty(toTorchShape shape, device)
+        t.FillInPlace(scalarFromConvValue (conv (valueFromScalar value))) |> ignore
         TorchRawTensor(t, shape, dtype, device) :> RawTensor
 
     member _.CreateFromFlatArray(values:Array, shape:Shape, device:Device) : RawTensor =
@@ -999,6 +1142,7 @@ type TorchBackendTensorStatics() =
     let torchInt64 = TorchInt64TensorOps()
     let torchByte = TorchByteTensorOps()
     let torchBool = TorchBoolTensorOps()
+
     let supported = Array.zeroCreate<int> 32
     let isSupported (deviceType: DiffSharp.DeviceType) = 
         let n = int deviceType
@@ -1099,7 +1243,7 @@ type TorchBackendTensorStatics() =
         | Int64 -> torchInt64.Ones(shape, device)
         | Bool -> torchBool.Ones(shape, device)
 
-    override _.Full(shape:Shape, value:obj, dtype, device) = 
+    override _.Full(shape:Shape, value:scalar, dtype, device) =
         match dtype with 
         | Float32 -> torchFloat32.Full(shape, value, device)
         | Float64 -> torchFloat64.Full(shape, value, device)
@@ -1153,3 +1297,4 @@ type TorchBackendTensorStatics() =
         | Int32 -> torchInt32.CreateFromFlatArray(values, shape, device)
         | Int64 -> torchInt64.CreateFromFlatArray(values, shape, device)
         | Bool -> torchBool.CreateFromFlatArray(values, shape, device)
+

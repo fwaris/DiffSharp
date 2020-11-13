@@ -1,4 +1,4 @@
-﻿(*** condition: prepare ***)
+(*** condition: prepare ***)
 #I "../tests/DiffSharp.Tests/bin/Debug/netcoreapp3.0"
 #r "Microsoft.Z3.dll"
 #r "DiffSharp.Core.dll"

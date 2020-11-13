@@ -489,7 +489,7 @@ module ShapedInferenceAutoOpens =
         /// <param name="dtype">The desired element type of returned tensor. Default: if None, uses Dtype.Default.</param>
         /// <param name="device">The desired device of returned tensor. Default: if None, uses Device.Default.</param>
         /// <param name="backend">The desired backend of returned tensor. Default: if None, uses Backend.Default.</param>
-        static member full(shape:Shape, value:obj, ?dtype:Dtype, ?device:Device, ?backend:Backend) =
+        static member full(shape:Shape, value:scalar, ?dtype:Dtype, ?device:Device, ?backend:Backend) =
             Tensor0(RawTensor.Full(shape, value, ?dtype=dtype, ?device=device, ?backend=backend))
 
         /// <summary>Returns a new tensor filled with the scalar <paramref name="value" />, for the given shape, element type and configuration.
@@ -500,7 +500,7 @@ module ShapedInferenceAutoOpens =
         /// <param name="dtype">The desired element type of returned tensor. Default: if None, uses Dtype.Default.</param>
         /// <param name="device">The desired device of returned tensor. Default: if None, uses Device.Default.</param>
         /// <param name="backend">The desired backend of returned tensor. Default: if None, uses Backend.Default.</param>
-        static member full(shape:seq<Int>, value:obj, ?dtype:Dtype, ?device:Device, ?backend:Backend) =
+        static member full(shape:seq<Int>, value:scalar, ?dtype:Dtype, ?device:Device, ?backend:Backend) =
             Tensor0(RawTensor.Full(Shape shape, value, ?dtype=dtype, ?device=device, ?backend=backend))
 
         /// <summary>Returns a new tensor filled with the scalar <paramref name="value" />, for the given shape, element type and configuration.
@@ -511,7 +511,7 @@ module ShapedInferenceAutoOpens =
         /// <param name="dtype">The desired element type of returned tensor. Default: if None, uses Dtype.Default.</param>
         /// <param name="device">The desired device of returned tensor. Default: if None, uses Device.Default.</param>
         /// <param name="backend">The desired backend of returned tensor. Default: if None, uses Backend.Default.</param>
-        static member full(length:Int, value:obj, ?dtype:Dtype, ?device:Device, ?backend:Backend) =
+        static member full(length:Int, value:scalar, ?dtype:Dtype, ?device:Device, ?backend:Backend) =
             Tensor0(RawTensor.Full(Shape [| length |], value, ?dtype=dtype, ?device=device, ?backend=backend))
 
         // /// <summary>TBD</summary>

@@ -13,6 +13,7 @@
     <Compile Include="ShapeType.fs" />
     <Compile Include="ShapeFunctions.fs" />
     <Compile Include="Util.fs" />
+    <Compile Include="Scalar.fs" />
     <Compile Include="RawTensor.fs" />
     <Compile Include="Tensor.fs" />
     <Compile Include="Tensor.Slicing.fs" />
