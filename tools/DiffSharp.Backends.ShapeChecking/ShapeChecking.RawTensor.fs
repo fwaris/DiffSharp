@@ -12,6 +12,8 @@ type ShapeCheckingTensor(shape: Shape, dtype: Dtype, device: Device) =
 
     let sample =
         match dtype with 
+        | Float16 -> 0.0f :> scalar
+        | BFloat16 -> 0.0f :> scalar
         | Float32 -> 0.0f :> scalar
         | Float64 -> 0.0 :> scalar
         | Int8 -> 0y :> scalar
@@ -84,14 +86,16 @@ type ShapeCheckingTensor(shape: Shape, dtype: Dtype, device: Device) =
         | _ -> 
             let dims = t.Shape.Dims |> Array.map (fun d -> d.ValueOrOne)
             match dtype with 
-            | Float32 -> arrayND dims (fun _ -> 0.0f)
-            | Float64 -> arrayND dims (fun _ -> 0.0)
-            | Int8 -> arrayND dims (fun _ -> 0y)
-            | Byte -> arrayND dims (fun _ -> 0uy)
-            | Int16 -> arrayND dims (fun _ -> 0s)
-            | Int32 -> arrayND dims (fun _ -> 0)
-            | Int64 -> arrayND dims (fun _ -> 0L)
-            | Bool -> arrayND dims (fun _ -> false)
+            | Float16
+            | BFloat16
+            | Float32 -> ArrayND.init dims (fun _ -> 0.0f)
+            | Float64 -> ArrayND.init dims (fun _ -> 0.0)
+            | Int8 -> ArrayND.init dims (fun _ -> 0y)
+            | Byte -> ArrayND.init dims (fun _ -> 0uy)
+            | Int16 -> ArrayND.init dims (fun _ -> 0s)
+            | Int32 -> ArrayND.init dims (fun _ -> 0)
+            | Int64 -> ArrayND.init dims (fun _ -> 0L)
+            | Bool -> ArrayND.init dims (fun _ -> false)
 
     override _.StackTs(tensors, dim) =
         let shapes = tensors |> Array.map (fun t -> t.Shape)
