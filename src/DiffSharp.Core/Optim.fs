@@ -12,7 +12,14 @@ open DiffSharp.Util
 ///
 /// <summary>Represents an optimizer.</summary>
 [<AbstractClass>]
-type Optimizer(model:Model) =
+type Optimizer() =
+
+    /// <summary>TBD</summary>
+    abstract member updateRule: string -> Tensor -> Tensor
+
+[<AbstractClass>]
+type ModelOptimizer(model:Model) =
+    inherit Optimizer()
 
     /// <summary>TBD</summary>
     member val model = model
@@ -20,13 +27,9 @@ type Optimizer(model:Model) =
     /// <summary>TBD</summary>
     member o.step() = model.parametersDict.iter(fun (n, p) -> let t = o.updateRule n p.value in p.value <- t)
 
-    /// <summary>TBD</summary>
-    abstract member updateRule: string -> Tensor -> Tensor
-
-
 /// <summary>TBD</summary>
 type SGD(model, ?learningRate:Tensor, ?momentum:Tensor, ?nesterov:bool, ?weightDecay:Tensor, ?reversible:bool) =
-    inherit Optimizer(model)
+    inherit ModelOptimizer(model)
     let learningRate = defaultArg learningRate (dsharp.tensor(1e-3))
     let nesterov = defaultArg nesterov true
     let reversible = defaultArg reversible false
@@ -56,7 +59,7 @@ type SGD(model, ?learningRate:Tensor, ?momentum:Tensor, ?nesterov:bool, ?weightD
 
 /// <summary>TBD</summary>
 type Adam(model, ?learningRate:Tensor, ?beta1:Tensor, ?beta2:Tensor, ?eps:Tensor, ?weightDecay:Tensor, ?reversible:bool) =
-    inherit Optimizer(model)
+    inherit ModelOptimizer(model)
     let learningRate = defaultArg learningRate (dsharp.tensor(1e-3))
     let beta1 = defaultArg beta1 (dsharp.tensor(0.9))
     let beta2 = defaultArg beta2 (dsharp.tensor(0.999))
@@ -150,7 +153,7 @@ type optim =
         fx, x
 
     /// <summary>TBD</summary>
-    static member internal optimizeModel(model:Model, optimizer:Optimizer, dataloader:DataLoader, loss:Tensor->Tensor->Tensor, ?iters:int, ?epochs:int, ?threshold:double, ?print:bool, ?printEvery:int, ?printPrefix:string, ?printPostfix:string) =
+    static member internal optimizeModel(model:Model, optimizer:ModelOptimizer, dataloader:DataLoader, loss:Tensor->Tensor->Tensor, ?iters:int, ?epochs:int, ?threshold:double, ?print:bool, ?printEvery:int, ?printPrefix:string, ?printPostfix:string) =
         let iters, epochs =
             match iters, epochs with
             | Some _, Some _ -> failwithf "Expecting only one of iters, epochs"
