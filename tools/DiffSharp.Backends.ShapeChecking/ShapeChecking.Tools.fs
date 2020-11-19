@@ -393,7 +393,7 @@ type ShapeCheckAttribute internal (given: obj[]) =
 [<AutoOpen>]
 module MoreTools =
 
-    type Model with
+    type BaseModel with
 
         /// Analyses the shapes of a model and prints a report
         static member AnalyseShapes<'T when 'T :> DiffSharp.Model.Model> ([<CallerFilePath>] caller, [<CallerLineNumber>] callerLine, ?optionals: bool) =
