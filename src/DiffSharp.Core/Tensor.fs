@@ -2322,32 +2322,30 @@ type Tensor =
         let ceil_mode = defaultArg ceil_mode false
         let count_include_pad= defaultArg count_include_pad true
 
-        Shape.checkCanMaxpool1d a.dtype a.shape kernelSize stride padding  |> ignore
+        Shape.checkCanAvgpool1d a.dtype a.shape kernelSize stride padding  |> ignore
         match a with
-        | Tensor0(ap)          -> let result, indices = ap.AvgPool1D(kernelSize, stride, padding, ceil_mode, count_include_pad) in Tensor0(result), Tensor0(indices)
-        | TensorF(ap,ad,at)    -> let result, indices = ap.avgpool1di(kernelSize, stride, padding) in TensorF(result, ad.gather(dim=2, indices=indices), at), indices
-        | TensorR(ap,_,_,_,at) -> let result, indices = ap.avgpool1di(kernelSize, stride, padding) in TensorR(result, ref (a.zeroLike()), MaxPool1DT(a, indices, kernelSize), ref 0u, at), indices
+        | Tensor0(ap)          ->
+            Tensor0(ap.AvgPool1D(kernelSize, stride, padding, ceil_mode, count_include_pad))
+        | TensorF(ap,ad,at)    ->
+            let result = ap.avgpool1d(kernelSize, stride, padding, ceil_mode, count_include_pad)
+            let resultd = ad.avgpool1d(kernelSize, stride, padding, ceil_mode, count_include_pad)
+            TensorF(result, resultd, at)
+        | TensorR(ap,_,_,_,at) ->
+            let result = ap.avgpool1d(kernelSize, stride, padding, ceil_mode, count_include_pad) 
+            TensorR(result, ref (a.zeroLike()), AvgPool1DT(a, kernelSize, stride, padding, ceil_mode, count_include_pad), ref 0u, at)
 
     /// <summary>Computes a partial inverse of avgpool1di</summary>
-    /// <param name="indices">The indices selected by avgpool1di.</param>
+    /// <param name="originalInput">The indices selected by avgpool1di.</param>
     /// <param name="kernelSize">The size of the window to take a max over.</param>
     /// <param name="stride">The stride of the window. Default value is kernelSize.</param>
     /// <param name="padding">The implicit zero padding to be added on both sides.</param>
-    /// <param name="outputSize">The targeted output size.</param>
-    member a.avgunpool1d(indices:Tensor, kernelSize:int, ?stride:int, ?padding:int, ?outputSize:seq<int>) =
-        let stride = defaultArg stride kernelSize
-        let padding = defaultArg padding 0
-        let outputSize = 
-            match outputSize with
-            | Some o -> let o = o |> Array.ofSeq in if o.Length <> 3 then failwithf "Expecting outputSize to be 3-dimensional" else o
-            | None -> 
-                let inputSize = a.shape.[2]
-                [|indices.shape.[0]; indices.shape.[1]; ((inputSize-1) * stride - 2*padding + kernelSize)|]
-        Shape.checkCanMaxunpool1d a.dtype a.shape indices.dtype indices.shape outputSize |> ignore
-        let inline fRaw(a:RawTensor) = a.AvgUnpool1D(indices.primalRaw, outputSize)
-        let inline fTensor(a:Tensor) = a.avgunpool1d(indices, kernelSize, stride=stride, padding=padding, outputSize=outputSize)
-        let inline dfTensorFwd(cp:Tensor,ap:Tensor,ad:Tensor) = ad.avgunpool1d(indices, kernelSize, stride=stride, padding=padding, outputSize=outputSize)
-        let inline dfTensorRev(a) = AvgUnpool1DT(a, indices)
+    /// <param name="ceil_mode">TBD.</param>
+    /// <param name="count_include_pad">TBD.</param>
+    member internal a.avgpoolReverse1d(originalInput:Tensor, kernelSize:int, stride:int, padding:int, ceil_mode: bool, count_include_pad: bool) =
+        let inline fRaw(a:RawTensor) = a.AvgPoolReverse1D(originalInput.primalRaw, kernelSize, stride, padding, ceil_mode, count_include_pad)
+        let inline fTensor(a:Tensor) = a.avgpoolReverse1d(originalInput, kernelSize, stride, padding, ceil_mode, count_include_pad)
+        let inline dfTensorFwd(cp:Tensor,ap:Tensor,ad:Tensor) = ad.avgpoolReverse1d(originalInput, kernelSize, stride, padding, ceil_mode, count_include_pad)
+        let inline dfTensorRev(a) = AvgPoolReverse1DT(a, kernelSize, stride, padding, ceil_mode, count_include_pad)
         Tensor.OpUnary(a, fRaw, fTensor, dfTensorFwd, dfTensorRev)
 
     /// <summary>Applies a 1D convolution over an input signal composed of several input planes</summary>
@@ -2801,6 +2799,12 @@ type Tensor =
                         | MaxUnpool1DT(a,_) -> reset (a::tt)
                         | MaxUnpool2DT(a,_) -> reset (a::tt)
                         | MaxUnpool3DT(a,_) -> reset (a::tt)
+                        | AvgPool1DT(a,_,_,_,_,_) -> reset (a::tt)
+                        //| AvgPool2DT(a,_,_,_) -> reset (a::tt)
+                        //| AvgPool3DT(a,_,_,_) -> reset (a::tt)
+                        | AvgPoolReverse1DT(a,_,_,_,_,_) -> reset (a::tt)
+                        //| AvgPoolReverse2DT(a,_,_) -> reset (a::tt)
+                        //| AvgPoolReverse3DT(a,_,_) -> reset (a::tt)
                         | Conv1DTT(a,b,_,_) -> reset (a::b::tt)
                         | Conv1DTTConst(a,_,_,_) -> reset (a::tt)
                         | Conv1DTConstT(_,b,_,_) -> reset (b::tt)
@@ -2914,6 +2918,12 @@ type Tensor =
                         | MaxUnpool1DT(a, indices) -> push (check(td.gather(dim=2, indices=indices), a) :: tt)
                         | MaxUnpool2DT(a, indices) -> push (check(td.flatten(startDim=2).gather(dim=2, indices=indices.flatten(startDim=2)).viewAs(a), a) :: tt)
                         | MaxUnpool3DT(a, indices) -> push (check(td.flatten(startDim=2).gather(dim=2, indices=indices.flatten(startDim=2)).viewAs(a), a) :: tt)
+                        | AvgPool1DT(a, kernelSize, stride, padding, ceil_mode, count_include_pad) -> push (check(td.avgpoolReverse1d(a, kernelSize, stride, padding, ceil_mode, count_include_pad), a) :: tt)
+                        //| AvgPool2DT(a, kernelSizes, ceil_mode, count_include_pad) -> push (check(td.avgpoolReverse2d(a, kernelSizes=kernelSizes, outputSize=a.shape), a) :: tt)
+                        //| AvgPool3DT(a, kernelSizes, ceil_mode, count_include_pad) -> push (check(td.avgpoolReverse3d(a, kernelSizes=kernelSizes, outputSize=a.shape), a) :: tt)
+                        | AvgPoolReverse1DT(a, ceil_mode, count_include_pad) -> push (check(td.gather(dim=2, indices=indices), a) :: tt)
+                        //| AvgPoolReverse2DT(a, ceil_mode, count_include_pad) -> push (check(td.flatten(startDim=2).gather(dim=2, indices=indices.flatten(startDim=2)).viewAs(a), a) :: tt)
+                        //| AvgPoolReverse3DT(a, ceil_mode, count_include_pad) -> push (check(td.flatten(startDim=2).gather(dim=2, indices=indices.flatten(startDim=2)).viewAs(a), a) :: tt)
                         | Conv1DTT(a,b,stride,padding) -> 
                             let aderivative, bderivative = Tensor.conv1dReverseDiff(a, b, td, false, false, stride, padding)
                             push (check(aderivative, a) :: check(bderivative, b) :: tt)
@@ -3061,6 +3071,9 @@ and TensorOp =
 
     | MaxPool3DT of Tensor * Tensor * int[]
     | MaxUnpool3DT of Tensor * Tensor
+
+    | AvgPool1DT of originalInput:Tensor * kernelSize:int * stride:int * padding:int * ceil_mode: bool * count_include_pad: bool
+    | AvgPoolReverse1DT of originalInput:Tensor * kernelSize:int * stride:int * padding:int * ceil_mode: bool * count_include_pad: bool
 
     | Conv1DTT of Tensor * Tensor * int * int
     | Conv1DTTConst of Tensor * Tensor * int * int
