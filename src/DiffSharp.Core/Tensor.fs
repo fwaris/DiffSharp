@@ -2310,6 +2310,46 @@ type Tensor =
         let inline dfTensorRev(a) = MaxUnpool3DT(a, indices)
         Tensor.OpUnary(a, fRaw, fTensor, dfTensorFwd, dfTensorRev)
 
+    /// <summary>Applies a 1D average pooling over an input signal composed of several input planes, returning the max indices along with the outputs.</summary>
+    /// <param name="kernelSize">The size of the window to take a max over.</param>
+    /// <param name="stride">The stride of the window. Default value is kernelSize.</param>
+    /// <param name="padding">The implicit zero padding to be added on both sides.</param>
+    /// <param name="ceil_mode">TBD.</param>
+    /// <param name="count_include_pad">TBD.</param>
+    member a.avgpool1d(kernelSize:int, ?stride:int, ?padding:int, ?ceil_mode: bool, ?count_include_pad: bool) =
+        let stride = defaultArg stride kernelSize
+        let padding = defaultArg padding 0
+        let ceil_mode = defaultArg ceil_mode false
+        let count_include_pad= defaultArg count_include_pad true
+
+        Shape.checkCanMaxpool1d a.dtype a.shape kernelSize stride padding  |> ignore
+        match a with
+        | Tensor0(ap)          -> let result, indices = ap.AvgPool1D(kernelSize, stride, padding, ceil_mode, count_include_pad) in Tensor0(result), Tensor0(indices)
+        | TensorF(ap,ad,at)    -> let result, indices = ap.avgpool1di(kernelSize, stride, padding) in TensorF(result, ad.gather(dim=2, indices=indices), at), indices
+        | TensorR(ap,_,_,_,at) -> let result, indices = ap.avgpool1di(kernelSize, stride, padding) in TensorR(result, ref (a.zeroLike()), MaxPool1DT(a, indices, kernelSize), ref 0u, at), indices
+
+    /// <summary>Computes a partial inverse of avgpool1di</summary>
+    /// <param name="indices">The indices selected by avgpool1di.</param>
+    /// <param name="kernelSize">The size of the window to take a max over.</param>
+    /// <param name="stride">The stride of the window. Default value is kernelSize.</param>
+    /// <param name="padding">The implicit zero padding to be added on both sides.</param>
+    /// <param name="outputSize">The targeted output size.</param>
+    member a.avgunpool1d(indices:Tensor, kernelSize:int, ?stride:int, ?padding:int, ?outputSize:seq<int>) =
+        let stride = defaultArg stride kernelSize
+        let padding = defaultArg padding 0
+        let outputSize = 
+            match outputSize with
+            | Some o -> let o = o |> Array.ofSeq in if o.Length <> 3 then failwithf "Expecting outputSize to be 3-dimensional" else o
+            | None -> 
+                let inputSize = a.shape.[2]
+                [|indices.shape.[0]; indices.shape.[1]; ((inputSize-1) * stride - 2*padding + kernelSize)|]
+        Shape.checkCanMaxunpool1d a.dtype a.shape indices.dtype indices.shape outputSize |> ignore
+        let inline fRaw(a:RawTensor) = a.AvgUnpool1D(indices.primalRaw, outputSize)
+        let inline fTensor(a:Tensor) = a.avgunpool1d(indices, kernelSize, stride=stride, padding=padding, outputSize=outputSize)
+        let inline dfTensorFwd(cp:Tensor,ap:Tensor,ad:Tensor) = ad.avgunpool1d(indices, kernelSize, stride=stride, padding=padding, outputSize=outputSize)
+        let inline dfTensorRev(a) = AvgUnpool1DT(a, indices)
+        Tensor.OpUnary(a, fRaw, fTensor, dfTensorFwd, dfTensorRev)
+
     /// <summary>Applies a 1D convolution over an input signal composed of several input planes</summary>
     /// <param name="filters">The filters.</param>
     /// <param name="stride">The stride of the convolving kernel.</param>

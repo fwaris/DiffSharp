@@ -448,6 +448,25 @@ type RawTensor() =
     /// Returns the 3D maxunpool of a tensor using the given indices for locations of maximums
     abstract MaxUnpool3D: indices: RawTensor * outputSize: int[] -> RawTensor
 
+    /// Returns the 1D avgpool of a tensor 
+    abstract AvgPool1D: kernelSize: int * stride: int * padding: int * ceil_mode: bool * count_include_pad: bool -> RawTensor
+
+    /// Returns the 2D avgpool of a tensor 
+    abstract AvgPool2D: kernelSize: int[] * stride: int[] * padding: int[] * ceil_mode: bool * count_include_pad: bool -> RawTensor
+
+    /// Returns the 2D avgpool of a tensor 
+    abstract AvgPool3D: kernelSize: int[] * stride: int[] * padding: int[] * ceil_mode: bool * count_include_pad: bool -> RawTensor
+
+    /// Returns the reverse mode of a 1D avgpool of a tensor, distributing the changes in the gradient
+    /// according to the original proportions for each average segment
+    abstract AvgPoolBackward1D: originalInput: RawTensor * kernelSize: int * stride: int * padding: int * ceil_mode: bool * count_include_pad: bool -> RawTensor
+
+    /// Returns the 2D avgpool of a tensor 
+    abstract AvgPoolBackward2D: originalInput: RawTensor * kernelSize: int[] * stride: int[] * padding: int[] * ceil_mode: bool * count_include_pad: bool -> RawTensor
+
+    /// Returns the 2D avgpool of a tensor 
+    abstract AvgPoolBackward3D: originalInput: RawTensor * kernelSize: int[] * stride: int[] * padding: int[] * ceil_mode: bool * count_include_pad: bool -> RawTensor
+
     /// Returns the 1D convolution of the tensor
     abstract Conv1D: kernel: RawTensor * stride: int * padding: int -> RawTensor
 
