@@ -33,7 +33,13 @@ type Int internal (n: int, sym: ISym) =
             let symY = y.AsSymbol(x.SymbolRaw.SymScope)
             f2 x.SymbolRaw symY
 
-    new (n: int) = Int(n, Unchecked.defaultof<_>)
+    new (n: int) =
+        //if n >= INTSYM_MIN && n <= INTSYM_MAX then
+        //    match IntegerSyms.GetOrCreateIntegerSym(n) with
+        //    | Some sym -> Int(0, sym)
+        //    | None -> Int(n, Unchecked.defaultof<_>)
+        //else 
+        Int(n, Unchecked.defaultof<_>)
 
     static member FromSymbol (sym: ISym) = Int(0, sym)
 
@@ -43,6 +49,11 @@ type Int internal (n: int, sym: ISym) =
         match box sym with 
         | null  -> syms.CreateConst(n)
         | _ -> sym
+
+    member x.IsSymbolic =
+        match x.TryGetValue() with 
+        | ValueSome _ -> false
+        | ValueNone -> true
 
     member x.TryGetName() =
         match box sym with 

@@ -698,7 +698,7 @@ type BatchNorm2d(numFeatures:Int, ?eps:double, ?momentum:Tensor, ?affine:bool, ?
 
     /// <summary>TBD</summary>
     override m.forward(value) =
-        if value.dim <> 4 || not (value.shapex.[1] =~= numFeatures) then failwithf "Expecting value to have shape NxCxHxW (batchSize x numFeatures x height x width) where numFeatures=%A, received value with shape %A" numFeatures value.shape
+        if value.dim <> 4 || not (value.shapex.[1] =~= numFeatures) then failwithf "Expecting value to have shape NxCxHxW (batchSize x numFeatures x height x width) where numFeatures=%A, received value with shape %A" numFeatures value.shapex
         let vt = value.transpose(0,1).view([numFeatures;Int -1])
         let mean, var =
             if m.mode = Mode.Train || (m.mode = Mode.Eval && not trackRunningStats) then
