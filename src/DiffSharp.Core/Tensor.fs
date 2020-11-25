@@ -2241,7 +2241,6 @@ type Tensor =
         let inline dfTensorRev(a) = MaxUnpool3DT(a, indices)
         Tensor.OpUnary(a, fRaw, fTensor, dfTensorFwd, dfTensorRev)
 
-
     /// <summary>Applies a 1D convolution over an input signal composed of several input planes</summary>
     /// <param name="filters">The filters.</param>
     /// <param name="stride">The stride of the convolving kernel.</param>
