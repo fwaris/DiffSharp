@@ -378,11 +378,11 @@ module rec Shape =
 
     /// Checks if the given shapes are appropriate for a maxpool operation and returns information related to the resulting shape.
     let checkCanMaxpool3d dtype shape kernelSize strides paddings =
-        checkCanMaxAvgpool2d "maxpool3d" dtype shape kernelSize strides paddings
+        checkCanMaxAvgpool3d "maxpool3d" dtype shape kernelSize strides paddings
 
     /// Checks if the given shapes are appropriate for an avgpool operation and returns information related to the resulting shape.
     let checkCanAvgpool3d dtype shape kernelSize strides paddings =
-        checkCanMaxAvgpool2d "avgpool3d" dtype shape kernelSize strides paddings
+        checkCanMaxAvgpool3d "avgpool3d" dtype shape kernelSize strides paddings
 
     /// Checks if the given shapes are appropriate for a maxunpool operation and returns information related to the resulting shape.
     let checkCanMaxunpool1d (dtype: Dtype) (shape: Shape) (indicesDtype: Dtype) (indicesShape: Shape) (outputSize: int[]) =
