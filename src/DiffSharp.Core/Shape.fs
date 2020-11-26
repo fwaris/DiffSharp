@@ -287,7 +287,7 @@ module rec Shape =
         batchSize, inputChannels, (kernelDepth, kernelHeight, kernelWidth), (outputChannels, outputDepth, outputHeight, outputWidth), outputShape
 
     /// Checks if the given shapes are appropriate for a maxpool operation and returns information related to the resulting shape.
-    let checkCanMaxAvgpool1d nm (dtype: Dtype) (shape: Shape) (kernelSize: int) (stride: int) (padding: int) =
+    let checkCanMaxOrAvgpool1d nm (dtype: Dtype) (shape: Shape) (kernelSize: int) (stride: int) (padding: int) =
         match dtype with
         | Dtype.Bool | Dtype.Integral -> opNotSupported nm dtype
         | _ ->
@@ -307,14 +307,14 @@ module rec Shape =
 
     /// Checks if the given shapes are appropriate for a maxpool operation and returns information related to the resulting shape.
     let checkCanMaxpool1d dtype shape kernelSize stride padding =
-        checkCanMaxAvgpool1d "maxpool1d" dtype shape kernelSize stride padding
+        checkCanMaxOrAvgpool1d "maxpool1d" dtype shape kernelSize stride padding
 
     /// Checks if the given shapes are appropriate for an avgpool operation and returns information related to the resulting shape.
     let checkCanAvgpool1d dtype shape kernelSize stride padding =
-        checkCanMaxAvgpool1d "maxpool1d" dtype shape kernelSize stride padding
+        checkCanMaxOrAvgpool1d "maxpool1d" dtype shape kernelSize stride padding
 
     /// Checks if the given shapes are appropriate for a maxpool operation and returns information related to the resulting shape.
-    let checkCanMaxAvgpool2d nm (dtype: Dtype) (shape: Shape) (kernelSize: int[]) (strides: int[]) (paddings: int[]) =
+    let checkCanMaxOrAvgpool2d nm (dtype: Dtype) (shape: Shape) (kernelSize: int[]) (strides: int[]) (paddings: int[]) =
         match dtype with
         | Dtype.Bool | Dtype.Integral -> opNotSupported nm dtype
         | _ ->
@@ -340,14 +340,14 @@ module rec Shape =
 
     /// Checks if the given shapes are appropriate for a maxpool operation and returns information related to the resulting shape.
     let checkCanMaxpool2d dtype shape kernelSize strides paddings =
-        checkCanMaxAvgpool2d "maxpool2d" dtype shape kernelSize strides paddings
+        checkCanMaxOrAvgpool2d "maxpool2d" dtype shape kernelSize strides paddings
 
     /// Checks if the given shapes are appropriate for an avgpool operation and returns information related to the resulting shape.
     let checkCanAvgpool2d dtype shape kernelSize strides paddings =
-        checkCanMaxAvgpool2d "avgpool2d" dtype shape kernelSize strides paddings
+        checkCanMaxOrAvgpool2d "avgpool2d" dtype shape kernelSize strides paddings
 
     /// Checks if the given shapes are appropriate for a maxpool operation and returns information related to the resulting shape.
-    let checkCanMaxAvgpool3d nm (dtype: Dtype) (shape: Shape) (kernelSize: int[]) (strides: int[]) (paddings: int[]) =
+    let checkCanMaxOrAvgpool3d nm (dtype: Dtype) (shape: Shape) (kernelSize: int[]) (strides: int[]) (paddings: int[]) =
         match dtype with
         | Dtype.Bool | Dtype.Integral -> opNotSupported nm dtype
         | _ ->
@@ -378,11 +378,11 @@ module rec Shape =
 
     /// Checks if the given shapes are appropriate for a maxpool operation and returns information related to the resulting shape.
     let checkCanMaxpool3d dtype shape kernelSize strides paddings =
-        checkCanMaxAvgpool3d "maxpool3d" dtype shape kernelSize strides paddings
+        checkCanMaxOrAvgpool3d "maxpool3d" dtype shape kernelSize strides paddings
 
     /// Checks if the given shapes are appropriate for an avgpool operation and returns information related to the resulting shape.
     let checkCanAvgpool3d dtype shape kernelSize strides paddings =
-        checkCanMaxAvgpool3d "avgpool3d" dtype shape kernelSize strides paddings
+        checkCanMaxOrAvgpool3d "avgpool3d" dtype shape kernelSize strides paddings
 
     /// Checks if the given shapes are appropriate for a maxunpool operation and returns information related to the resulting shape.
     let checkCanMaxunpool1d (dtype: Dtype) (shape: Shape) (indicesDtype: Dtype) (indicesShape: Shape) (outputSize: int[]) =
