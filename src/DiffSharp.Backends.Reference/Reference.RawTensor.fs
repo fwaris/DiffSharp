@@ -846,23 +846,23 @@ module internal RawTensorCPU =
         result
 
     let inline AvgPoolReverse1D ofInt (t1: RawTensorCPU< ^T >, originalInput: RawTensor, kernelSize, stride, padding) : RawTensorCPU< ^T > =
-        let batchSize, channels, inputSize, _outputSize, outputShape =
+        let batchSize, channels, inputSize, outputSize, _outputShape =
             Shape.checkCanAvgpool1d t1.Dtype originalInput.Shape kernelSize stride padding
-        let result = t1.ZerosLike(outputShape) :?> RawTensorCPU<'T>
+        let result = t1.ZerosLike(originalInput.Shape) :?> RawTensorCPU<'T>
         for n=0 to batchSize-1 do
             for c=0 to channels-1 do
-                for v=0 to inputSize-1 do
+                for v=0 to outputSize-1 do
                     for u=0 to kernelSize-1 do
                         let i = (v*stride) + u - padding
                         if i >= 0 && i < inputSize then
-                            result.[[|n; c; i|]] <- t1.[[|n; c; u|]] / ofInt kernelSize
+                            result.[[|n; c; i|]] <- t1.[[|n; c; v|]] / ofInt kernelSize
         result
 
     let inline AvgPoolReverse2D ofInt (t1: RawTensorCPU< ^T >, originalInput: RawTensor, kernelSize, stride, padding) : RawTensorCPU< ^T > =
-        let batchSize, channels, (inputHeight, inputWidth), (kernelHeight, kernelWidth), (outputHeight, outputWidth), outputShape =
+        let batchSize, channels, (inputHeight, inputWidth), (kernelHeight, kernelWidth), (outputHeight, outputWidth), _outputShape =
             Shape.checkCanAvgpool2d t1.Dtype originalInput.Shape kernelSize stride padding
         let kernelSize = kernelHeight * kernelWidth
-        let result = t1.ZerosLike(outputShape) :?> RawTensorCPU<'T>
+        let result = t1.ZerosLike(originalInput.Shape) :?> RawTensorCPU<'T>
         for n=0 to batchSize-1 do
             for c=0 to channels-1 do
                 for v0=0 to outputHeight-1 do
@@ -872,14 +872,14 @@ module internal RawTensorCPU =
                                 let i0 = (v0*stride.[0]) + u0 - padding.[0]
                                 let i1 = (v1*stride.[1]) + u1 - padding.[1]
                                 if i0 >= 0 && i0 < inputHeight && i1 >= 0 && i1 < inputWidth then
-                                    result.[[|n; c; i0; i1|]] <- t1.[[|n; c; u0; u1|]] / ofInt kernelSize
+                                    result.[[|n; c; i0; i1|]] <- t1.[[|n; c; v0; v1|]] / ofInt kernelSize
         result
 
     let inline AvgPoolReverse3D ofInt (t1: RawTensorCPU< ^T >, originalInput: RawTensor, kernelSize, stride, padding) : RawTensorCPU< ^T > =
-        let batchSize, channels, (inputDepth, inputHeight, inputWidth), (kernelDepth, kernelHeight, kernelWidth), (outputDepth, outputHeight, outputWidth), outputShape =
+        let batchSize, channels, (inputDepth, inputHeight, inputWidth), (kernelDepth, kernelHeight, kernelWidth), (outputDepth, outputHeight, outputWidth), _outputShape =
             Shape.checkCanAvgpool3d t1.Dtype originalInput.Shape kernelSize stride padding
         let kernelSize = kernelDepth * kernelHeight * kernelWidth
-        let result = t1.ZerosLike(outputShape) :?> RawTensorCPU<'T>
+        let result = t1.ZerosLike(originalInput.Shape) :?> RawTensorCPU<'T>
         for n=0 to batchSize-1 do
             for c=0 to channels-1 do
                 for v0=0 to outputDepth-1 do
@@ -892,7 +892,7 @@ module internal RawTensorCPU =
                                         let i1 = (v1*stride.[1]) + u1 - padding.[1]
                                         let i2 = (v2*stride.[2]) + u2 - padding.[2]
                                         if i0 >= 0 && i0 < inputDepth && i1 >= 0 && i1 < inputHeight && i2 >= 0 && i2 < inputWidth then
-                                            result.[[|n; c; i0; i1; i2|]] <- t1.[[|n; c; u0; u1; u2|]] / ofInt kernelSize
+                                            result.[[|n; c; i0; i1; i2|]] <- t1.[[|n; c; v0; v1; v2|]] / ofInt kernelSize
         result
 
     let inline NegT op (t: RawTensorCPU< ^T >) : (^T[] * Shape) =

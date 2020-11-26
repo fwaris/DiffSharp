@@ -13,76 +13,53 @@ type TestTensorAvgPool () =
 
     [<Test>]
     member _.TestTensorAvgPool1D () =
-        for combo in Combos.FloatingPointExcept16s do
+        for combo in Combos.Float32 do
             let t = combo.tensor([[[-2.1704, -1.1558,  2.5995,  1.3858, -1.3157, -0.3179,  0.9593,  -2.1432,  0.7169, -1.7999],
-                                     [ 0.4564, -0.2262,  0.3495,  0.4587, -0.3858,  0.2349,  0.2978,  0.6288,  1.1539,  0.2121]],
+                                   [ 0.4564, -0.2262,  0.3495,  0.4587, -0.3858,  0.2349,  0.2978,  0.6288,  1.1539,  0.2121]],
 
-                                    [[ 0.6654,  0.7151,  0.9980,  0.1321, -2.0009, -1.1897,  1.0608,  -1.8059, -0.2344,  1.6387],
-                                     [ 1.1872, -2.2679, -0.0297, -0.2067, -1.5622, -0.3916,  0.6039,  -1.1469,  0.4560,  1.2069]]])
+                                  [[ 0.6654,  0.7151,  0.9980,  0.1321, -2.0009, -1.1897,  1.0608,  -1.8059, -0.2344,  1.6387],
+                                   [ 1.1872, -2.2679, -0.0297, -0.2067, -1.5622, -0.3916,  0.6039,  -1.1469,  0.4560,  1.2069]]])
 
-            let tk3, tk3i = dsharp.maxpool1di(t, 3)
-            let tk3Correct = combo.tensor([[[ 2.5995,  1.3858,  0.9593],
-                                            [ 0.4564,  0.4587,  1.1539]],
-                                     
-                                           [[ 0.9980,  0.1321,  1.0608],
-                                            [ 1.1872, -0.2067,  0.6039]]])
-            let tk3iCorrect = combo.tensor([[[2, 3, 6],
-                                             [0, 3, 8]],
-                                     
-                                            [[2, 3, 6],
-                                             [0, 3, 6]]], dtype=Dtype.Int32)
-            Assert.CheckEqual(tk3Correct, tk3)
-            Assert.CheckEqual(tk3iCorrect, tk3i)
+            let tk3 = t.avgpool1d(kernelSize=3)
+            let tk3Correct =
+                combo.tensor([[[-0.2422, -0.0826, -0.1557],
+                               [ 0.1932,  0.1026,  0.6935]],
 
-            let tk3p1, tk3p1i = dsharp.maxpool1di(t, 3, padding=1)
-            let tk3p1Correct = combo.tensor([[[-1.1558,  2.5995,  0.9593,  0.7169],
-                                                [ 0.4564,  0.4587,  0.6288,  1.1539]],
-                                       
-                                               [[ 0.7151,  0.9980,  1.0608,  1.6387],
-                                                [ 1.1872, -0.0297,  0.6039,  1.2069]]])
-            let tk3p1iCorrect = combo.tensor([[[1, 2, 6, 8],
-                                                [0, 3, 7, 8]],
-                                       
-                                               [[1, 2, 6, 9],
-                                                [0, 2, 6, 9]]], dtype=Dtype.Int32)
-            Assert.CheckEqual(tk3p1iCorrect, tk3p1i)
-            Assert.CheckEqual(tk3p1Correct, tk3p1)
+                              [[ 0.7928, -1.0195, -0.3265],
+                               [-0.3701, -0.7202, -0.0290]]])
+            Assert.True(tk3Correct.allclose(tk3,0.01))
 
-            let tk3s2, tk3s2i = dsharp.maxpool1di(t, 3, stride=2)
-            let tk3s2Correct = combo.tensor([[[ 2.5995,  2.5995,  0.9593,  0.9593],
-                                              [ 0.4564,  0.4587,  0.2978,  1.1539]],
-                                     
-                                             [[ 0.9980,  0.9980,  1.0608,  1.0608],
-                                              [ 1.1872, -0.0297,  0.6039,  0.6039]]])
-            let tk3s2iCorrect = combo.tensor([[[2, 2, 6, 6],
-                                                  [0, 3, 6, 8]],
-                                         
-                                                 [[2, 2, 6, 6],
-                                                  [0, 2, 6, 6]]], dtype=Dtype.Int32)
-            Assert.CheckEqual(tk3s2iCorrect, tk3s2i)
-            Assert.CheckEqual(tk3s2Correct, tk3s2)
+            let tk3p1 = t.avgpool1d(3, padding=1)
+            let tk3p1Correct = combo.tensor([[[-1.1087,  0.8899, -0.5006, -0.3610],
+                                              [ 0.0767,  0.1408,  0.3872,  0.4553]],
 
-            let tk4s3p2, tk4s3p2i = dsharp.maxpool1di(t, 4, stride=3, padding=2)
-            let tk4s3p2Correct = combo.tensor([[[-1.1558,  2.5995,  0.9593,  0.7169],
-                                                  [ 0.4564,  0.4587,  0.6288,  1.1539]],
-                                         
-                                                 [[ 0.7151,  0.9980,  1.0608,  1.6387],
-                                                  [ 1.1872, -0.0297,  0.6039,  1.2069]]])
-            let tk4s3p2iCorrect = combo.tensor([[[1, 2, 6, 8],
-                                                  [0, 3, 7, 8]],
-                                         
-                                                 [[1, 2, 6, 9],
-                                                  [0, 2, 6, 9]]], dtype=Dtype.Int32)
-            Assert.CheckEqual(tk4s3p2iCorrect, tk4s3p2i)
-            Assert.CheckEqual(tk4s3p2Correct, tk4s3p2)
+                                             [[ 0.4602, -0.2903, -0.6449,  0.4681],
+                                              [-0.3602, -0.5995, -0.3115,  0.5543]]])
+            Assert.True(tk3p1Correct.allclose(tk3p1,0.01))
+
+            let tk3s2 = t.avgpool1d(3, stride=2)
+            let tk3s2Correct = combo.tensor([[[-0.2422,  0.8899, -0.2248, -0.1557],
+                                              [ 0.1932,  0.1408,  0.0490,  0.6935]],
+
+                                             [[ 0.7928, -0.2903, -0.7099, -0.3265],
+                                              [-0.3701, -0.5995, -0.4500, -0.0290]]])
+            Assert.True(tk3s2Correct.allclose(tk3s2,0.01))
+
+            let tk4s3p2 = t.avgpool1d(4, stride=3, padding=2)
+            let tk4s3p2Correct = combo.tensor([[[-0.8316,  0.3784, -0.7044, -0.8066],
+                                                [ 0.0576,  0.0491,  0.1939,  0.4987]],
+
+                                               [[ 0.3451, -0.0389, -0.9839, -0.1004],
+                                                [-0.2702, -1.0166, -0.6242,  0.1290]]])
+            Assert.True(tk4s3p2Correct.allclose(tk4s3p2,0.01))
 
         for combo in Combos.IntegralAndBool do 
             let x = combo.zeros([1;4;4])
-            isInvalidOp(fun () -> dsharp.maxpool1d(x,3))
+            isInvalidOp(fun () -> x.avgpool1d(3))
 
     [<Test>]
     member _.TestTensorAvgPool2D () =
-        for combo in Combos.IntegralAndFloatingPointExcept16s do
+        for combo in Combos.Float32 do
             let t = combo.tensor([[[[ 0.7372,  0.7090,  0.9216,  0.3363,  1.0141, -0.7642,  0.3801, -0.9568],
                                       [-0.3520, -1.2336,  1.8489,  0.9929, -0.8138,  0.0978, -1.3206, -1.5434],
                                       [ 0.6883, -0.2346,  0.1735,  0.6695, -1.9122,  1.1338, -0.1248,  0.2164],
@@ -120,149 +97,87 @@ type TestTensorAvgPool () =
                                       [-1.1117, -0.3422,  1.2130, -1.1206,  0.9506, -0.7723,  0.3162, -0.5487],
                                       [ 0.6304, -0.9149,  0.6075, -0.5371,  1.5875, -0.2979, -0.5832, -3.0311]]]])
 
-            let tk3, tk3i = dsharp.maxpool2di(t, 3)
-            let tk3Correct = combo.tensor([[[[1.8489, 1.1338],
-                                              [0.6819, 1.6331]],
+            // Python: tk3 = torch.nn.functional.avg_pool2d(t, 3)
+            let tk3 = t.avgpool2d(kernelSize=3)
+            let tk3Correct =
+                combo.tensor([[[[ 0.3620,  0.0838],
+                                [-0.4986, -0.1936]],
 
-                                             [[1.0867, 2.1048],
-                                              [2.7646, 1.0156]]],
-
-
-                                            [[[2.1120, 0.8666],
-                                              [0.9141, 1.7133]],
-
-                                             [[1.4250, 1.8228],
-                                              [1.2607, 0.5448]]]])
-            let tk3iCorrect = combo.tensor([[[[10, 21],
-                                                  [41, 45]],
-
-                                                 [[ 8,  5],
-                                                  [40, 28]]],
+                               [[-0.1467,  0.1900],
+                                [ 0.7352, -0.1927]]],
 
 
-                                                [[[ 8, 21],
-                                                  [32, 36]],
+                              [[[ 0.1092, -0.3213],
+                                [-0.1939, -0.1830]],
 
-                                                 [[ 9, 13],
-                                                  [25, 27]]]], dtype=Dtype.Int32)
-            Assert.CheckEqual(tk3Correct, tk3)
-            Assert.CheckEqual(tk3iCorrect, tk3i)
+                               [[ 0.3618, -0.1829],
+                                [ 0.1001, -0.4036]]]])
+            Assert.True(tk3Correct.allclose(tk3,0.01))
 
-            let tk3p1, tk3p1i = dsharp.maxpool2di(t, 3, padding=1)
-            let tk3p1Correct = combo.tensor([[[[0.7372, 1.8489, 0.3801],
-                                                  [0.6883, 1.0254, 1.1338],
-                                                  [0.6819, 1.0146, 1.6331]],
+            let tk3p1 = t.avgpool2d(3, padding=1)
+            let tk3p1Correct = combo.tensor([[[[-0.0155,  0.4778, -0.4563],
+                                               [-0.2938, -0.2273,  0.0925],
+                                               [ 0.1721, -0.1277,  0.2536]],
 
-                                                 [[1.0867, 1.7527, 2.1048],
-                                                  [2.2070, 1.0156, 1.2660],
-                                                  [2.7646, 1.3832, 2.5090]]],
-
-
-                                                [[[2.1120, 0.2085, 1.0594],
-                                                  [0.9141, 1.7133, 1.2406],
-                                                  [0.3855, 1.4428, 0.6534]],
-
-                                                 [[1.4250, 1.7200, 1.8228],
-                                                  [1.2607, 0.6599, 1.8958],
-                                                  [0.6304, 1.5875, 0.4057]]]])
-            let tk3p1iCorrect = combo.tensor([[[[ 0, 10,  6],
-                                                  [16, 36, 21],
-                                                  [41, 59, 45]],
-
-                                                 [[ 8,  3,  5],
-                                                  [33, 28, 23],
-                                                  [40, 52, 47]]],
+                                              [[-0.0733,  0.1213,  0.3111],
+                                               [ 0.3216, -0.1573,  0.4132],
+                                               [ 0.2505, -0.2541, -0.2050]]],
 
 
-                                                [[[ 8,  2,  6],
-                                                  [32, 36, 37],
-                                                  [49, 60, 45]],
+                                             [[[ 0.0916, -0.2539, -0.1622],
+                                               [ 0.2652, -0.1399, -0.1895],
+                                               [-0.4082, -0.0751, -0.1504]],
 
-                                                 [[ 9,  4, 13],
-                                                  [25, 19, 38],
-                                                  [56, 60, 47]]]], dtype=Dtype.Int32)
-            Assert.CheckEqual(tk3p1iCorrect, tk3p1i)
-            Assert.CheckEqual(tk3p1Correct, tk3p1)
+                                              [[ 0.2058, -0.2071,  0.2998],
+                                               [ 0.2396, -0.4154, -0.0426],
+                                               [-0.1534,  0.3234, -0.7543]]]])
+            Assert.True(tk3p1Correct.allclose(tk3p1,0.01))
 
-            let tk3s2, tk3s2i = dsharp.maxpool2di(t, 3, stride=2)
-            let tk3s2Correct = combo.tensor([[[[1.8489, 1.8489, 1.1338],
-                                                  [0.6883, 1.0254, 1.1338],
-                                                  [0.6819, 1.0254, 1.6331]],
+            let tk3s2 = t.avgpool2d(3, stride=2)
+            let tk3s2Correct = combo.tensor([[[[ 0.3620,  0.3590, -0.2566],
+                                               [-0.2289, -0.2273, -0.2117],
+                                               [-0.2675, -0.0378,  0.3629]],
 
-                                                 [[1.0867, 1.7527, 2.1048],
-                                                  [2.2070, 1.0156, 1.0156],
-                                                  [2.7646, 1.3832, 1.3832]]],
-
-
-                                                [[[2.1120, 0.2085, 1.0594],
-                                                  [0.9141, 1.7133, 1.7133],
-                                                  [0.9141, 1.7133, 1.7133]],
-
-                                                 [[1.4250, 1.7200, 1.8228],
-                                                  [1.2607, 0.6599, 1.8958],
-                                                  [1.2130, 1.2130, 1.8958]]]])
-            let tk3s2iCorrect = combo.tensor([[[[10, 10, 21],
-                                                  [16, 36, 21],
-                                                  [41, 36, 45]],
-
-                                                 [[ 8,  3,  5],
-                                                  [33, 28, 28],
-                                                  [40, 52, 52]]],
+                                              [[-0.1467, -0.1534,  0.1763],
+                                               [ 0.3573, -0.1573,  0.0715],
+                                               [ 0.6931, -0.1276,  0.2165]]],
 
 
-                                                [[[ 8,  2,  6],
-                                                  [32, 36, 36],
-                                                  [32, 36, 36]],
+                                             [[[ 0.1092, -0.3271, -0.0871],
+                                               [ 0.2702, -0.1399,  0.0238],
+                                               [-0.3106, -0.0657,  0.3895]],
 
-                                                 [[ 9,  4, 13],
-                                                  [25, 19, 38],
-                                                  [50, 50, 38]]]], dtype=Dtype.Int32)
-            Assert.CheckEqual(tk3s2iCorrect, tk3s2i)
-            Assert.CheckEqual(tk3s2Correct, tk3s2)
+                                              [[ 0.3618, -0.2317, -0.0383],
+                                               [ 0.2025, -0.4154, -0.4103],
+                                               [-0.0730,  0.0166,  0.0953]]]])
+            Assert.True(tk3s2Correct.allclose(tk3s2,0.01))
 
-            let tk4s3p2, tk4s3p2i = dsharp.maxpool2di(t, 4, stride=3, padding=2)
-            let tk4s3p2Correct = combo.tensor([[[[0.7372, 1.8489, 1.0141],
-                                                  [0.6883, 1.8489, 1.1338],
-                                                  [0.6819, 1.0254, 1.6331]],
+            let tk4s3p2 = t.avgpool2d(4, stride=3, padding=2)
+            let tk4s3p2Correct = combo.tensor([[[[-0.0087,  0.2360, -0.2442],
+                                                  [-0.2644, -0.0808, -0.2677],
+                                                  [-0.0447,  0.0648,  0.2326]],
 
-                                                 [[1.0867, 1.7527, 2.1048],
-                                                  [2.2070, 2.2070, 1.4476],
-                                                  [2.7646, 2.2070, 2.5090]]],
-
-
-                                                [[[2.1120, 0.4063, 1.0594],
-                                                  [2.1120, 1.7133, 1.7133],
-                                                  [0.9141, 1.7133, 1.7133]],
-
-                                                 [[1.4250, 1.7200, 1.8228],
-                                                  [1.4250, 1.4250, 1.8958],
-                                                  [0.6304, 1.5875, 1.8958]]]])
-            let tk4s3p2iCorrect = combo.tensor([[[[ 0, 10,  4],
-                                                      [16, 10, 21],
-                                                      [41, 36, 45]],
-
-                                                     [[ 8,  3,  5],
-                                                      [33, 33, 15],
-                                                      [40, 33, 47]]],
+                                                 [[-0.0412, -0.0358,  0.1555],
+                                                  [ 0.1317, -0.0301,  0.2187],
+                                                  [ 0.3348, -0.0710, -0.1313]]],
 
 
-                                                    [[[ 8,  1,  6],
-                                                      [ 8, 36, 36],
-                                                      [32, 36, 36]],
+                                                [[[ 0.0515, -0.1579, -0.1772],
+                                                  [ 0.2407, -0.0449, -0.0952],
+                                                  [-0.1313, -0.0083,  0.1643]],
 
-                                                     [[ 9,  4, 13],
-                                                      [ 9,  9, 38],
-                                                      [56, 60, 38]]]], dtype=Dtype.Int32)
-            Assert.CheckEqual(tk4s3p2iCorrect, tk4s3p2i)
-            Assert.CheckEqual(tk4s3p2Correct, tk4s3p2)
+                                                 [[ 0.1157, -0.0198,  0.1411],
+                                                  [ 0.2398, -0.1340, -0.1811],
+                                                  [-0.1508,  0.0100, -0.0932]]]])
+            Assert.True(tk4s3p2Correct.allclose(tk4s3p2,0.01))
 
         for combo in Combos.IntegralAndBool do 
-            let x = combo.zeros([4;4;4;4])
-            isInvalidOp(fun () -> dsharp.maxpool2d(x,3))
+            let x = combo.zeros([1;4;4])
+            isInvalidOp(fun () -> x.avgpool2d(3))
 
     [<Test>]
     member _.TestTensorAvgPool3D () =
-        for combo in Combos.IntegralAndFloatingPointExcept16s do
+        for combo in Combos.Float32 do
             let t = combo.tensor([[[[ 0.4633,  0.9173,  0.4568, -1.7660, -0.1077],
                                        [-2.1112,  1.5542,  0.5720, -1.0952, -1.8144],
                                        [ 0.3505, -0.9843, -2.5655, -0.9835,  1.2303],
@@ -324,885 +239,120 @@ type TestTensorAvgPool () =
                                        [ 0.4750, -0.9006, -1.5002,  0.8689, -0.0379],
                                        [ 0.2891,  0.0195, -0.0503, -0.3235,  1.5407]]]]).unsqueeze(0)
 
-            let tk2, tk2i = dsharp.maxpool3di(t, 2)
-            let tk2Correct = combo.tensor([[[[1.5542, 0.5720],
-                                                [1.5415, 1.3066]],
-                                     
-                                               [[1.1442, 1.3531],
-                                                [2.0900, 1.2851]]],
-                                     
-                                     
-                                              [[[2.0711, 1.2451],
-                                                [1.2176, 1.1689]],
-                                     
-                                               [[2.2379, 2.4069],
-                                                [0.5255, 1.7098]]]]).unsqueeze(0)
-            let tk2iCorrect = combo.tensor([[[[ 6,  7],
-                                                [16, 17]],
-                                     
-                                               [[76, 82],
-                                                [90, 67]]],
-                                     
-                                     
-                                              [[[ 5, 32],
-                                                [15, 18]],
-                                     
-                                               [[56, 83],
-                                                [90, 88]]]], dtype=Dtype.Int32).unsqueeze(0)
-            Assert.CheckEqual(tk2Correct, tk2)
-            Assert.CheckEqual(tk2iCorrect, tk2i)
+            // Python: tk3 = torch.nn.functional.avg_pool3d(t, 2)
+            let tk3 = t.avgpool3d(kernelSize=2)
+            let tk3Correct =
+                combo.tensor([[[[-0.1796, -0.7489],
+                                   [ 0.1707, -0.4103]],
 
-            let tk2p1, tk2p1i = dsharp.maxpool3di(t, 2, padding=1)
-            let tk2p1Correct = combo.tensor([[[[ 0.4633,  0.9173, -0.1077],
-                                                [ 0.3505,  1.5542,  1.2303],
-                                                [ 0.8156,  1.5936,  0.2060]],
-                                     
-                                               [[ 0.2996,  0.5738,  0.6299],
-                                                [ 1.0910, -0.0037,  1.2910],
-                                                [ 0.1940,  1.2939,  1.3469]],
-                                     
-                                               [[ 1.0358,  1.6584,  1.5641],
-                                                [ 0.4032,  1.3531,  1.1186],
-                                                [ 2.2015,  1.0479,  1.8761]]],
-                                     
-                                     
-                                              [[[-1.2563,  1.0405,  0.7333],
-                                                [ 2.0711,  1.0576,  1.1195],
-                                                [ 1.2176,  0.3765,  1.8267]],
-                                     
-                                               [[ 1.2927,  1.8860,  0.8106],
-                                                [ 0.7614,  2.2379,  1.4035],
-                                                [ 0.4963,  2.5382,  1.9080]],
-                                     
-                                               [[ 0.5853,  1.9343,  2.1774],
-                                                [ 1.2673,  1.3343,  2.4069],
-                                                [ 0.5255,  0.2564,  1.5519]]]]).unsqueeze(0)
-            let tk2p1iCorrect = combo.tensor([[[[  0,   1,   4],
-                                                    [ 10,   6,  14],
-                                                    [ 15,  21,  19]],
-                                         
-                                                   [[ 50,  51,  29],
-                                                    [ 60,  62,  34],
-                                                    [ 40,  72,  73]],
-                                         
-                                                   [[100, 101, 104],
-                                                    [105,  82,  89],
-                                                    [ 95,  91,  94]]],
-                                         
-                                         
-                                                  [[[  0,   2,   4],
-                                                    [  5,  12,   9],
-                                                    [ 15,  21,  23]],
-                                         
-                                                   [[ 25,  51,  28],
-                                                    [ 30,  56,  59],
-                                                    [ 65,  71,  73]],
-                                         
-                                                   [[ 75,  76,  78],
-                                                    [105, 111,  83],
-                                                    [ 90,  91,  93]]]], dtype=Dtype.Int32).unsqueeze(0)
-            Assert.CheckEqual(tk2p1iCorrect, tk2p1i)
-            Assert.CheckEqual(tk2p1Correct, tk2p1)
+                                  [[ 0.2401, -0.0137],
+                                   [ 0.6632, -0.4040]]],
 
-            let tk2s3, tk2s3i = dsharp.maxpool3di(t, 2, stride=3)
-            let tk2s3Correct = combo.tensor([[[[1.5542, 1.2910],
-                                                [1.5936, 1.0687]],
-                                     
-                                               [[1.6584, 1.5641],
-                                                [2.2015, 1.8761]]],
-                                     
-                                     
-                                              [[[2.0711, 1.1195],
-                                                [1.2176, 1.8941]],
-                                     
-                                               [[1.9343, 2.4069],
-                                                [0.5255, 1.5519]]]]).unsqueeze(0)
-            let tk2s3iCorrect = combo.tensor([[[[  6,  34],
-                                                    [ 21,  43]],
-                                         
-                                                   [[101, 104],
-                                                    [ 95,  94]]],
-                                         
-                                         
-                                                  [[[  5,   9],
-                                                    [ 15,  44]],
-                                         
-                                                   [[ 76,  83],
-                                                    [ 90,  93]]]], dtype=Dtype.Int32).unsqueeze(0)
-            Assert.CheckEqual(tk2s3iCorrect, tk2s3i)
-            Assert.CheckEqual(tk2s3Correct, tk2s3)
 
-            let tk2s3p1, tk2s3p1i = dsharp.maxpool3di(t, 2, stride=3, padding=1)
-            let tk2s3p1Correct = combo.tensor([[[[ 0.4633,  0.4568],
-                                                    [ 0.8156,  1.3066]],
-                                         
-                                                   [[ 0.2996,  0.2835],
-                                                    [ 2.0900,  1.2851]]],
-                                         
-                                         
-                                                  [[[-1.2563,  1.0405],
-                                                    [ 1.2176,  1.1689]],
-                                         
-                                                   [[ 0.8200,  2.1774],
-                                                    [ 0.5255,  1.7098]]]]).unsqueeze(0)
-            let tk2s3p1iCorrect = combo.tensor([[[[ 0,  2],
-                                                    [15, 17]],
-                                         
-                                                   [[50, 53],
-                                                    [90, 67]]],
-                                         
-                                         
-                                                  [[[ 0,  2],
-                                                    [15, 18]],
-                                         
-                                                   [[50, 78],
-                                                    [90, 88]]]], dtype=Dtype.Int32).unsqueeze(0)
-            Assert.CheckEqual(tk2s3p1iCorrect, tk2s3p1i)
-            Assert.CheckEqual(tk2s3p1Correct, tk2s3p1)
+                                 [[[ 0.4292,  0.3118],
+                                   [-0.3000, -0.0659]],
+
+                                  [[ 0.6223,  0.1840],
+                                   [-0.2863,  0.3931]]]]).unsqueeze(0)
+            Assert.True(tk3Correct.allclose(tk3,0.01))
+
+            let tk3p1 = t.avgpool3d(3, padding=1)
+            let tk3p1Correct = combo.tensor([[[[-0.0532, -0.2219],
+                                                   [ 0.0894, -0.0741]],
+
+                                                  [[ 0.2145, -0.1285],
+                                                   [ 0.1076, -0.0274]]],
+
+
+                                                 [[[ 0.1272,  0.1195],
+                                                   [-0.1337,  0.0022]],
+
+                                                  [[ 0.1938,  0.0235],
+                                                   [-0.0977,  0.4126]]]]).unsqueeze(0)
+            Assert.True(tk3p1Correct.allclose(tk3p1,0.05))
+
+            let tk3s2 = t.avgpool3d(3, stride=2)
+            let tk3s2Correct = combo.tensor([[[[-0.2375, -0.5007],
+                                                   [ 0.2532, -0.1142]],
+
+                                                  [[ 0.1130, -0.2214],
+                                                   [ 0.1301, -0.0274]]],
+
+
+                                                 [[[ 0.2325, -0.0886],
+                                                   [-0.0716,  0.1873]],
+
+                                                  [[ 0.2140,  0.1903],
+                                                   [-0.1574,  0.4126]]]]).unsqueeze(0)
+            Assert.True(tk3s2Correct.allclose(tk3s2,0.01))
+
+            // Python: tk3 = torch.nn.functional.avg_pool3d(t, 4, stride=3, padding=2)
+            let tk4s3p2 = t.avgpool3d(4, stride=3, padding=2)
+            let tk4s3p2Correct = combo.tensor([[[[-0.0224, -0.0767],
+                                                   [ 0.0327, -0.0403]],
+
+                                                  [[ 0.0552, -0.0525],
+                                                   [ 0.0590, -0.0462]]],
+
+
+                                                 [[[ 0.0536,  0.0592],
+                                                   [-0.0211, -0.0237]],
+
+                                                  [[ 0.1244,  0.1232],
+                                                   [-0.0857,  0.1654]]]]).unsqueeze(0)
+            Assert.True(tk4s3p2Correct.allclose(tk4s3p2,0.01))
 
         for combo in Combos.IntegralAndBool do 
-            let x = combo.zeros([4;4;4;4;4])
-            isInvalidOp(fun () -> dsharp.maxpool3d(x,3))
+            let x = combo.zeros([1;4;4])
+            isInvalidOp(fun () -> x.avgpool3d(3))
 
     [<Test>]
-    member _.TestTensorMaxUnpool1D () =
-        for combo in Combos.IntegralAndFloatingPointExcept16s do
-            let tk3 = combo.tensor([[[ 2.5995,  1.3858,  0.9593],
-                                      [ 0.4564,  0.4587,  1.1539]],
-                             
-                                     [[ 0.9980,  0.1321,  1.0608],
-                                      [ 1.1872, -0.2067,  0.6039]]])
-            let tk3i = combo.tensor([[[2, 3, 6],
-                                          [0, 3, 8]],
-                                 
-                                         [[2, 3, 6],
-                                          [0, 3, 6]]], dtype=Dtype.Int32)
-            let tk3u = dsharp.maxunpool1d(tk3, tk3i, 3)
-            let tk3uCorrect = combo.tensor([[[ 0.0000,  0.0000,  2.5995,  1.3858,  0.0000,  0.0000,  0.9593,  0.0000,  0.0000],
-                                             [ 0.4564,  0.0000,  0.0000,  0.4587,  0.0000,  0.0000,  0.0000,  0.0000,  1.1539]],
+    member _.TestTensorAvgPoolReverse1D () =
+        for combo in Combos.Float32 do
+            let t = combo.ones([2;2;6])
 
-                                            [[ 0.0000,  0.0000,  0.9980,  0.1321,  0.0000,  0.0000,  1.0608,  0.0000,  0.0000],
-                                             [ 1.1872,  0.0000,  0.0000, -0.2067,  0.0000,  0.0000,  0.6039,  0.0000,  0.0000]]])
-            Assert.CheckEqual(tk3uCorrect, tk3u)
+            let tk3 = t.avgpool1d(kernelSize=3)
+            let tk3Correct = combo.ones([2;2;2])
+            printfn $"tk3Correct = {tk3Correct}"
+            printfn $"tk3        = {tk3}"
+            Assert.True(tk3Correct.allclose(tk3,0.01))
 
-            let tk3p1 = combo.tensor([[[-1.1558,  2.5995,  0.9593,  0.7169],
-                                            [ 0.4564,  0.4587,  0.6288,  1.1539]],
-                                   
-                                           [[ 0.7151,  0.9980,  1.0608,  1.6387],
-                                            [ 1.1872, -0.0297,  0.6039,  1.2069]]])
-            let tk3p1i = combo.tensor([[[1, 2, 6, 8],
-                                                [0, 3, 7, 8]],
-                                       
-                                               [[1, 2, 6, 9],
-                                                [0, 2, 6, 9]]], dtype=Dtype.Int32)
-            let tk3p1u = dsharp.maxunpool1d(tk3p1, tk3p1i, 3, padding=1)
-            let tk3p1uCorrect = combo.tensor([[[ 0.0000, -1.1558,  2.5995,  0.0000,  0.0000,  0.0000,  0.9593,
-                                                   0.0000,  0.7169,  0.0000],
-                                                 [ 0.4564,  0.0000,  0.0000,  0.4587,  0.0000,  0.0000,  0.0000,
-                                                   0.6288,  1.1539,  0.0000]],
-
-                                                [[ 0.0000,  0.7151,  0.9980,  0.0000,  0.0000,  0.0000,  1.0608,
-                                                   0.0000,  0.0000,  1.6387],
-                                                 [ 1.1872,  0.0000, -0.0297,  0.0000,  0.0000,  0.0000,  0.6039,
-                                                   0.0000,  0.0000,  1.2069]]])
-            Assert.CheckEqual(tk3p1uCorrect, tk3p1u)
-
-            let tk3s2 = combo.tensor([[[ 2.5995,  2.5995,  0.9593,  0.9593],
-                                              [ 0.4564,  0.4587,  0.2978,  1.1539]],
-                                     
-                                             [[ 0.9980,  0.9980,  1.0608,  1.0608],
-                                              [ 1.1872, -0.0297,  0.6039,  0.6039]]])
-            let tk3s2i = combo.tensor([[[2, 2, 6, 6],
-                                                  [0, 3, 6, 8]],
-                                         
-                                                 [[2, 2, 6, 6],
-                                                  [0, 2, 6, 6]]], dtype=Dtype.Int32)
-            let tk3s2u = dsharp.maxunpool1d(tk3s2, tk3s2i, 3, stride=2)
-            let tk3s2uCorrect = combo.tensor([[[ 0.0000,  0.0000,  2.5995,  0.0000,  0.0000,  0.0000,  0.9593,
-                                                   0.0000,  0.0000],
-                                                 [ 0.4564,  0.0000,  0.0000,  0.4587,  0.0000,  0.0000,  0.2978,
-                                                   0.0000,  1.1539]],
-
-                                                [[ 0.0000,  0.0000,  0.9980,  0.0000,  0.0000,  0.0000,  1.0608,
-                                                   0.0000,  0.0000],
-                                                 [ 1.1872,  0.0000, -0.0297,  0.0000,  0.0000,  0.0000,  0.6039,
-                                                   0.0000,  0.0000]]])
-            Assert.CheckEqual(tk3s2uCorrect, tk3s2u)
-
-            let tk4s3p2 = combo.tensor([[[-1.1558,  2.5995,  0.9593,  0.7169],
-                                              [ 0.4564,  0.4587,  0.6288,  1.1539]],
-                                     
-                                             [[ 0.7151,  0.9980,  1.0608,  1.6387],
-                                              [ 1.1872, -0.0297,  0.6039,  1.2069]]])
-            let tk4s3p2i = combo.tensor([[[1, 2, 6, 8],
-                                                  [0, 3, 7, 8]],
-                                         
-                                                 [[1, 2, 6, 9],
-                                                  [0, 2, 6, 9]]], dtype=Dtype.Int32)
-            let tk4s3p2u = dsharp.maxunpool1d(tk4s3p2, tk4s3p2i, 4, stride=3, padding=2, outputSize=[2;2;10])
-            let tk4s3p2uCorrect = combo.tensor([[[ 0.0000, -1.1558,  2.5995,  0.0000,  0.0000,  0.0000,  0.9593,
-                                                   0.0000,  0.7169,  0.0000],
-                                                 [ 0.4564,  0.0000,  0.0000,  0.4587,  0.0000,  0.0000,  0.0000,
-                                                   0.6288,  1.1539,  0.0000]],
-
-                                                [[ 0.0000,  0.7151,  0.9980,  0.0000,  0.0000,  0.0000,  1.0608,
-                                                   0.0000,  0.0000,  1.6387],
-                                                 [ 1.1872,  0.0000, -0.0297,  0.0000,  0.0000,  0.0000,  0.6039,
-                                                   0.0000,  0.0000,  1.2069]]])
-            Assert.CheckEqual(tk4s3p2uCorrect, tk4s3p2u)
+            let tk3r = tk3.avgpoolReverse1d(t, 3)
+            let tk3rCorrect = combo.full([2;2;6], 1.0/3.0)
+            printfn $"tk3r        = {tk3r}"
+            printfn $"tk3rCorrect        = {tk3rCorrect}"
+            Assert.True(tk3rCorrect.allclose(tk3r,0.01))
 
     [<Test>]
-    member _.TestTensorMaxUnpool2D () =
-        for combo in Combos.IntegralAndFloatingPointExcept16s do
-            let tk3 = combo.tensor([[[[1.8489, 1.1338],
-                                              [0.6819, 1.6331]],
+    member _.TestTensorAvgPoolReverse2D () =
+        for combo in Combos.Float32 do
+            let t = combo.ones([2;2;6;6])
 
-                                             [[1.0867, 2.1048],
-                                              [2.7646, 1.0156]]],
+            let tk3 = t.avgpool2d(kernelSize=3)
+            let tk3Correct = combo.ones([2;2;2;2])
+            printfn $"tk3Correct = {tk3Correct}"
+            printfn $"tk3        = {tk3}"
+            Assert.True(tk3Correct.allclose(tk3,0.01))
 
-
-                                            [[[2.1120, 0.8666],
-                                              [0.9141, 1.7133]],
-
-                                             [[1.4250, 1.8228],
-                                              [1.2607, 0.5448]]]])
-            let tk3i = combo.tensor([[[[10, 21],
-                                                  [41, 45]],
-
-                                                 [[ 8,  5],
-                                                  [40, 28]]],
-
-
-                                                [[[ 8, 21],
-                                                  [32, 36]],
-
-                                                 [[ 9, 13],
-                                                  [25, 27]]]], dtype=Dtype.Int32)
-            let tk3u = dsharp.maxunpool2d(tk3, tk3i, 3, outputSize=[2;2;8;8])
-            let tk3uCorrect = combo.tensor([[[[0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000],
-                                              [0.0000, 0.0000, 1.8489, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000],
-                                              [0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 1.1338, 0.0000, 0.0000],
-                                              [0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000],
-                                              [0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000],
-                                              [0.0000, 0.6819, 0.0000, 0.0000, 0.0000, 1.6331, 0.0000, 0.0000],
-                                              [0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000],
-                                              [0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000]],
-
-                                             [[0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 2.1048, 0.0000, 0.0000],
-                                              [1.0867, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000],
-                                              [0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000],
-                                              [0.0000, 0.0000, 0.0000, 0.0000, 1.0156, 0.0000, 0.0000, 0.0000],
-                                              [0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000],
-                                              [2.7646, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000],
-                                              [0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000],
-                                              [0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000]]],
-
-
-                                            [[[0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000],
-                                              [2.1120, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000],
-                                              [0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.8666, 0.0000, 0.0000],
-                                              [0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000],
-                                              [0.9141, 0.0000, 0.0000, 0.0000, 1.7133, 0.0000, 0.0000, 0.0000],
-                                              [0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000],
-                                              [0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000],
-                                              [0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000]],
-
-                                             [[0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000],
-                                              [0.0000, 1.4250, 0.0000, 0.0000, 0.0000, 1.8228, 0.0000, 0.0000],
-                                              [0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000],
-                                              [0.0000, 1.2607, 0.0000, 0.5448, 0.0000, 0.0000, 0.0000, 0.0000],
-                                              [0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000],
-                                              [0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000],
-                                              [0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000],
-                                              [0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000]]]])
-            Assert.CheckEqual(tk3uCorrect, tk3u)
-
-            let tk3p1 = combo.tensor([[[[0.7372, 1.8489, 0.3801],
-                                              [0.6883, 1.0254, 1.1338],
-                                              [0.6819, 1.0146, 1.6331]],
-
-                                             [[1.0867, 1.7527, 2.1048],
-                                              [2.2070, 1.0156, 1.2660],
-                                              [2.7646, 1.3832, 2.5090]]],
-
-
-                                            [[[2.1120, 0.2085, 1.0594],
-                                              [0.9141, 1.7133, 1.2406],
-                                              [0.3855, 1.4428, 0.6534]],
-
-                                             [[1.4250, 1.7200, 1.8228],
-                                              [1.2607, 0.6599, 1.8958],
-                                              [0.6304, 1.5875, 0.4057]]]])
-            let tk3p1i = combo.tensor([[[[ 0, 10,  6],
-                                                  [16, 36, 21],
-                                                  [41, 59, 45]],
-
-                                                 [[ 8,  3,  5],
-                                                  [33, 28, 23],
-                                                  [40, 52, 47]]],
-
-
-                                                [[[ 8,  2,  6],
-                                                  [32, 36, 37],
-                                                  [49, 60, 45]],
-
-                                                 [[ 9,  4, 13],
-                                                  [25, 19, 38],
-                                                  [56, 60, 47]]]], dtype=Dtype.Int32)
-            let tk3p1u = dsharp.maxunpool2d(tk3p1, tk3p1i, 3, padding=1, outputSize=[2;2;8;8])
-            let tk3p1uCorrect = combo.tensor([[[[0.7372, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.3801, 0.0000],
-                                                  [0.0000, 0.0000, 1.8489, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000],
-                                                  [0.6883, 0.0000, 0.0000, 0.0000, 0.0000, 1.1338, 0.0000, 0.0000],
-                                                  [0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000],
-                                                  [0.0000, 0.0000, 0.0000, 0.0000, 1.0254, 0.0000, 0.0000, 0.0000],
-                                                  [0.0000, 0.6819, 0.0000, 0.0000, 0.0000, 1.6331, 0.0000, 0.0000],
-                                                  [0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000],
-                                                  [0.0000, 0.0000, 0.0000, 1.0146, 0.0000, 0.0000, 0.0000, 0.0000]],
-
-                                                 [[0.0000, 0.0000, 0.0000, 1.7527, 0.0000, 2.1048, 0.0000, 0.0000],
-                                                  [1.0867, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000],
-                                                  [0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 1.2660],
-                                                  [0.0000, 0.0000, 0.0000, 0.0000, 1.0156, 0.0000, 0.0000, 0.0000],
-                                                  [0.0000, 2.2070, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000],
-                                                  [2.7646, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 2.5090],
-                                                  [0.0000, 0.0000, 0.0000, 0.0000, 1.3832, 0.0000, 0.0000, 0.0000],
-                                                  [0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000]]],
-
-
-                                                [[[0.0000, 0.0000, 0.2085, 0.0000, 0.0000, 0.0000, 1.0594, 0.0000],
-                                                  [2.1120, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000],
-                                                  [0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000],
-                                                  [0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000],
-                                                  [0.9141, 0.0000, 0.0000, 0.0000, 1.7133, 1.2406, 0.0000, 0.0000],
-                                                  [0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.6534, 0.0000, 0.0000],
-                                                  [0.0000, 0.3855, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000],
-                                                  [0.0000, 0.0000, 0.0000, 0.0000, 1.4428, 0.0000, 0.0000, 0.0000]],
-
-                                                 [[0.0000, 0.0000, 0.0000, 0.0000, 1.7200, 0.0000, 0.0000, 0.0000],
-                                                  [0.0000, 1.4250, 0.0000, 0.0000, 0.0000, 1.8228, 0.0000, 0.0000],
-                                                  [0.0000, 0.0000, 0.0000, 0.6599, 0.0000, 0.0000, 0.0000, 0.0000],
-                                                  [0.0000, 1.2607, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000],
-                                                  [0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 1.8958, 0.0000],
-                                                  [0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.4057],
-                                                  [0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000],
-                                                  [0.6304, 0.0000, 0.0000, 0.0000, 1.5875, 0.0000, 0.0000, 0.0000]]]])
-            Assert.CheckEqual(tk3p1uCorrect, tk3p1u)
-
-            let tk3s2 = combo.tensor([[[[1.8489, 1.8489, 1.1338],
-                                              [0.6883, 1.0254, 1.1338],
-                                              [0.6819, 1.0254, 1.6331]],
-
-                                             [[1.0867, 1.7527, 2.1048],
-                                              [2.2070, 1.0156, 1.0156],
-                                              [2.7646, 1.3832, 1.3832]]],
-
-
-                                            [[[2.1120, 0.2085, 1.0594],
-                                              [0.9141, 1.7133, 1.7133],
-                                              [0.9141, 1.7133, 1.7133]],
-
-                                             [[1.4250, 1.7200, 1.8228],
-                                              [1.2607, 0.6599, 1.8958],
-                                              [1.2130, 1.2130, 1.8958]]]])
-            let tk3s2i = combo.tensor([[[[10, 10, 21],
-                                                  [16, 36, 21],
-                                                  [41, 36, 45]],
-
-                                                 [[ 8,  3,  5],
-                                                  [33, 28, 28],
-                                                  [40, 52, 52]]],
-
-
-                                                [[[ 8,  2,  6],
-                                                  [32, 36, 36],
-                                                  [32, 36, 36]],
-
-                                                 [[ 9,  4, 13],
-                                                  [25, 19, 38],
-                                                  [50, 50, 38]]]], dtype=Dtype.Int32)
-            let tk3s2u = dsharp.maxunpool2d(tk3s2, tk3s2i, 3, stride=2, outputSize=[2;2;8;8])
-            let tk3s2uCorrect = combo.tensor([[[[0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000],
-                                                  [0.0000, 0.0000, 1.8489, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000],
-                                                  [0.6883, 0.0000, 0.0000, 0.0000, 0.0000, 1.1338, 0.0000, 0.0000],
-                                                  [0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000],
-                                                  [0.0000, 0.0000, 0.0000, 0.0000, 1.0254, 0.0000, 0.0000, 0.0000],
-                                                  [0.0000, 0.6819, 0.0000, 0.0000, 0.0000, 1.6331, 0.0000, 0.0000],
-                                                  [0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000],
-                                                  [0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000]],
-
-                                                 [[0.0000, 0.0000, 0.0000, 1.7527, 0.0000, 2.1048, 0.0000, 0.0000],
-                                                  [1.0867, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000],
-                                                  [0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000],
-                                                  [0.0000, 0.0000, 0.0000, 0.0000, 1.0156, 0.0000, 0.0000, 0.0000],
-                                                  [0.0000, 2.2070, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000],
-                                                  [2.7646, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000],
-                                                  [0.0000, 0.0000, 0.0000, 0.0000, 1.3832, 0.0000, 0.0000, 0.0000],
-                                                  [0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000]]],
-
-
-                                                [[[0.0000, 0.0000, 0.2085, 0.0000, 0.0000, 0.0000, 1.0594, 0.0000],
-                                                  [2.1120, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000],
-                                                  [0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000],
-                                                  [0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000],
-                                                  [0.9141, 0.0000, 0.0000, 0.0000, 1.7133, 0.0000, 0.0000, 0.0000],
-                                                  [0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000],
-                                                  [0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000],
-                                                  [0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000]],
-
-                                                 [[0.0000, 0.0000, 0.0000, 0.0000, 1.7200, 0.0000, 0.0000, 0.0000],
-                                                  [0.0000, 1.4250, 0.0000, 0.0000, 0.0000, 1.8228, 0.0000, 0.0000],
-                                                  [0.0000, 0.0000, 0.0000, 0.6599, 0.0000, 0.0000, 0.0000, 0.0000],
-                                                  [0.0000, 1.2607, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000],
-                                                  [0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 1.8958, 0.0000],
-                                                  [0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000],
-                                                  [0.0000, 0.0000, 1.2130, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000],
-                                                  [0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000]]]])
-            Assert.CheckEqual(tk3s2uCorrect, tk3s2u)
-
-            let tk4s3p2 = combo.tensor([[[[0.7372, 1.8489, 1.0141],
-                                              [0.6883, 1.8489, 1.1338],
-                                              [0.6819, 1.0254, 1.6331]],
-
-                                             [[1.0867, 1.7527, 2.1048],
-                                              [2.2070, 2.2070, 1.4476],
-                                              [2.7646, 2.2070, 2.5090]]],
-
-
-                                            [[[2.1120, 0.4063, 1.0594],
-                                              [2.1120, 1.7133, 1.7133],
-                                              [0.9141, 1.7133, 1.7133]],
-
-                                             [[1.4250, 1.7200, 1.8228],
-                                              [1.4250, 1.4250, 1.8958],
-                                              [0.6304, 1.5875, 1.8958]]]])
-            let tk4s3p2i = combo.tensor([[[[ 0, 10,  4],
-                                                      [16, 10, 21],
-                                                      [41, 36, 45]],
-
-                                                     [[ 8,  3,  5],
-                                                      [33, 33, 15],
-                                                      [40, 33, 47]]],
-
-
-                                                    [[[ 8,  1,  6],
-                                                      [ 8, 36, 36],
-                                                      [32, 36, 36]],
-
-                                                     [[ 9,  4, 13],
-                                                      [ 9,  9, 38],
-                                                      [56, 60, 38]]]], dtype=Dtype.Int32)
-            let tk4s3p2u = dsharp.maxunpool2d(tk4s3p2, tk4s3p2i, 4, stride=3, padding=2, outputSize=[2;2;8;8])
-            let tk4s3p2uCorrect = combo.tensor([[[[0.7372, 0.0000, 0.0000, 0.0000, 1.0141, 0.0000, 0.0000, 0.0000],
-                                                  [0.0000, 0.0000, 1.8489, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000],
-                                                  [0.6883, 0.0000, 0.0000, 0.0000, 0.0000, 1.1338, 0.0000, 0.0000],
-                                                  [0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000],
-                                                  [0.0000, 0.0000, 0.0000, 0.0000, 1.0254, 0.0000, 0.0000, 0.0000],
-                                                  [0.0000, 0.6819, 0.0000, 0.0000, 0.0000, 1.6331, 0.0000, 0.0000],
-                                                  [0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000],
-                                                  [0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000]],
-
-                                                 [[0.0000, 0.0000, 0.0000, 1.7527, 0.0000, 2.1048, 0.0000, 0.0000],
-                                                  [1.0867, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 1.4476],
-                                                  [0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000],
-                                                  [0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000],
-                                                  [0.0000, 2.2070, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000],
-                                                  [2.7646, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 2.5090],
-                                                  [0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000],
-                                                  [0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000]]],
-
-
-                                                [[[0.0000, 0.4063, 0.0000, 0.0000, 0.0000, 0.0000, 1.0594, 0.0000],
-                                                  [2.1120, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000],
-                                                  [0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000],
-                                                  [0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000],
-                                                  [0.9141, 0.0000, 0.0000, 0.0000, 1.7133, 0.0000, 0.0000, 0.0000],
-                                                  [0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000],
-                                                  [0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000],
-                                                  [0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000]],
-
-                                                 [[0.0000, 0.0000, 0.0000, 0.0000, 1.7200, 0.0000, 0.0000, 0.0000],
-                                                  [0.0000, 1.4250, 0.0000, 0.0000, 0.0000, 1.8228, 0.0000, 0.0000],
-                                                  [0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000],
-                                                  [0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000],
-                                                  [0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 1.8958, 0.0000],
-                                                  [0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000],
-                                                  [0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000],
-                                                  [0.6304, 0.0000, 0.0000, 0.0000, 1.5875, 0.0000, 0.0000, 0.0000]]]])
-            Assert.CheckEqual(tk4s3p2uCorrect, tk4s3p2u)
-
+            let tk3r = tk3.avgpoolReverse2d(t, 3)
+            let tk3rCorrect = combo.full([2;2;6;6], 1.0/9.0)
+            printfn $"tk3r        = {tk3r}"
+            printfn $"tk3rCorrect        = {tk3rCorrect}"
+            Assert.True(tk3rCorrect.allclose(tk3r,0.01))
 
     [<Test>]
-    member _.TestTensorMaxUnpool3D () =
-        for combo in Combos.IntegralAndFloatingPointExcept16s do
-            let tk2 = combo.tensor([[[[1.5542, 0.5720],
-                                        [1.5415, 1.3066]],
-                             
-                                       [[1.1442, 1.3531],
-                                        [2.0900, 1.2851]]],
-                             
-                             
-                                      [[[2.0711, 1.2451],
-                                        [1.2176, 1.1689]],
-                             
-                                       [[2.2379, 2.4069],
-                                        [0.5255, 1.7098]]]]).unsqueeze(0)
-            let tk2i = combo.tensor([[[[ 6,  7],
-                                        [16, 17]],
-                             
-                                       [[76, 82],
-                                        [90, 67]]],
-                             
-                             
-                                      [[[ 5, 32],
-                                        [15, 18]],
-                             
-                                       [[56, 83],
-                                        [90, 88]]]], dtype=Dtype.Int32).unsqueeze(0)
-            let tk2u = dsharp.maxunpool3d(tk2, tk2i, 2, outputSize=[1;2;5;5;5])
-            let tk2uCorrect = combo.tensor([[[[0.0000, 0.0000, 0.0000, 0.0000, 0.0000],
-                                               [0.0000, 1.5542, 0.5720, 0.0000, 0.0000],
-                                               [0.0000, 0.0000, 0.0000, 0.0000, 0.0000],
-                                               [0.0000, 1.5415, 1.3066, 0.0000, 0.0000],
-                                               [0.0000, 0.0000, 0.0000, 0.0000, 0.0000]],
+    member _.TestTensorAvgPoolReverse3D () =
+        for combo in Combos.Float32 do
+            let t = combo.ones([2;2;6;6;6])
 
-                                              [[0.0000, 0.0000, 0.0000, 0.0000, 0.0000],
-                                               [0.0000, 0.0000, 0.0000, 0.0000, 0.0000],
-                                               [0.0000, 0.0000, 0.0000, 0.0000, 0.0000],
-                                               [0.0000, 0.0000, 0.0000, 0.0000, 0.0000],
-                                               [0.0000, 0.0000, 0.0000, 0.0000, 0.0000]],
+            let tk3 = t.avgpool3d(kernelSize=3)
+            let tk3Correct = combo.ones([2;2;2;2;2])
+            printfn $"tk3Correct = {tk3Correct}"
+            printfn $"tk3        = {tk3}"
+            Assert.True(tk3Correct.allclose(tk3,0.01))
 
-                                              [[0.0000, 0.0000, 0.0000, 0.0000, 0.0000],
-                                               [0.0000, 0.0000, 0.0000, 0.0000, 0.0000],
-                                               [0.0000, 0.0000, 0.0000, 0.0000, 0.0000],
-                                               [0.0000, 0.0000, 1.2851, 0.0000, 0.0000],
-                                               [0.0000, 0.0000, 0.0000, 0.0000, 0.0000]],
-
-                                              [[0.0000, 1.1442, 0.0000, 0.0000, 0.0000],
-                                               [0.0000, 0.0000, 1.3531, 0.0000, 0.0000],
-                                               [0.0000, 0.0000, 0.0000, 0.0000, 0.0000],
-                                               [2.0900, 0.0000, 0.0000, 0.0000, 0.0000],
-                                               [0.0000, 0.0000, 0.0000, 0.0000, 0.0000]],
-
-                                              [[0.0000, 0.0000, 0.0000, 0.0000, 0.0000],
-                                               [0.0000, 0.0000, 0.0000, 0.0000, 0.0000],
-                                               [0.0000, 0.0000, 0.0000, 0.0000, 0.0000],
-                                               [0.0000, 0.0000, 0.0000, 0.0000, 0.0000],
-                                               [0.0000, 0.0000, 0.0000, 0.0000, 0.0000]]],
-
-
-                                             [[[0.0000, 0.0000, 0.0000, 0.0000, 0.0000],
-                                               [2.0711, 0.0000, 0.0000, 0.0000, 0.0000],
-                                               [0.0000, 0.0000, 0.0000, 0.0000, 0.0000],
-                                               [1.2176, 0.0000, 0.0000, 1.1689, 0.0000],
-                                               [0.0000, 0.0000, 0.0000, 0.0000, 0.0000]],
-
-                                              [[0.0000, 0.0000, 0.0000, 0.0000, 0.0000],
-                                               [0.0000, 0.0000, 1.2451, 0.0000, 0.0000],
-                                               [0.0000, 0.0000, 0.0000, 0.0000, 0.0000],
-                                               [0.0000, 0.0000, 0.0000, 0.0000, 0.0000],
-                                               [0.0000, 0.0000, 0.0000, 0.0000, 0.0000]],
-
-                                              [[0.0000, 0.0000, 0.0000, 0.0000, 0.0000],
-                                               [0.0000, 2.2379, 0.0000, 0.0000, 0.0000],
-                                               [0.0000, 0.0000, 0.0000, 0.0000, 0.0000],
-                                               [0.0000, 0.0000, 0.0000, 0.0000, 0.0000],
-                                               [0.0000, 0.0000, 0.0000, 0.0000, 0.0000]],
-
-                                              [[0.0000, 0.0000, 0.0000, 0.0000, 0.0000],
-                                               [0.0000, 0.0000, 0.0000, 2.4069, 0.0000],
-                                               [0.0000, 0.0000, 0.0000, 1.7098, 0.0000],
-                                               [0.5255, 0.0000, 0.0000, 0.0000, 0.0000],
-                                               [0.0000, 0.0000, 0.0000, 0.0000, 0.0000]],
-
-                                              [[0.0000, 0.0000, 0.0000, 0.0000, 0.0000],
-                                               [0.0000, 0.0000, 0.0000, 0.0000, 0.0000],
-                                               [0.0000, 0.0000, 0.0000, 0.0000, 0.0000],
-                                               [0.0000, 0.0000, 0.0000, 0.0000, 0.0000],
-                                               [0.0000, 0.0000, 0.0000, 0.0000, 0.0000]]]]).unsqueeze(0)
-            Assert.CheckEqual(tk2uCorrect, tk2u)
-
-            let tk2p1 = combo.tensor([[[[ 0.4633,  0.9173, -0.1077],
-                                                [ 0.3505,  1.5542,  1.2303],
-                                                [ 0.8156,  1.5936,  0.2060]],
-                                     
-                                               [[ 0.2996,  0.5738,  0.6299],
-                                                [ 1.0910, -0.0037,  1.2910],
-                                                [ 0.1940,  1.2939,  1.3469]],
-                                     
-                                               [[ 1.0358,  1.6584,  1.5641],
-                                                [ 0.4032,  1.3531,  1.1186],
-                                                [ 2.2015,  1.0479,  1.8761]]],
-                                     
-                                     
-                                              [[[-1.2563,  1.0405,  0.7333],
-                                                [ 2.0711,  1.0576,  1.1195],
-                                                [ 1.2176,  0.3765,  1.8267]],
-                                     
-                                               [[ 1.2927,  1.8860,  0.8106],
-                                                [ 0.7614,  2.2379,  1.4035],
-                                                [ 0.4963,  2.5382,  1.9080]],
-                                     
-                                               [[ 0.5853,  1.9343,  2.1774],
-                                                [ 1.2673,  1.3343,  2.4069],
-                                                [ 0.5255,  0.2564,  1.5519]]]]).unsqueeze(0)
-            let tk2p1i = combo.tensor([[[[  0,   1,   4],
-                                                    [ 10,   6,  14],
-                                                    [ 15,  21,  19]],
-                                         
-                                                   [[ 50,  51,  29],
-                                                    [ 60,  62,  34],
-                                                    [ 40,  72,  73]],
-                                         
-                                                   [[100, 101, 104],
-                                                    [105,  82,  89],
-                                                    [ 95,  91,  94]]],
-                                         
-                                         
-                                                  [[[  0,   2,   4],
-                                                    [  5,  12,   9],
-                                                    [ 15,  21,  23]],
-                                         
-                                                   [[ 25,  51,  28],
-                                                    [ 30,  56,  59],
-                                                    [ 65,  71,  73]],
-                                         
-                                                   [[ 75,  76,  78],
-                                                    [105, 111,  83],
-                                                    [ 90,  91,  93]]]], dtype=Dtype.Int32).unsqueeze(0)
-            let tk2p1u = dsharp.maxunpool3d(tk2p1, tk2p1i, 2, padding=1, outputSize=[1;2;5;5;5])
-            let tk2p1uCorrect = combo.tensor([[[[ 0.4633,  0.9173,  0.0000,  0.0000, -0.1077],
-                                                   [ 0.0000,  1.5542,  0.0000,  0.0000,  0.0000],
-                                                   [ 0.3505,  0.0000,  0.0000,  0.0000,  1.2303],
-                                                   [ 0.8156,  0.0000,  0.0000,  0.0000,  0.2060],
-                                                   [ 0.0000,  1.5936,  0.0000,  0.0000,  0.0000]],
-
-                                                  [[ 0.0000,  0.0000,  0.0000,  0.0000,  0.6299],
-                                                   [ 0.0000,  0.0000,  0.0000,  0.0000,  1.2910],
-                                                   [ 0.0000,  0.0000,  0.0000,  0.0000,  0.0000],
-                                                   [ 0.1940,  0.0000,  0.0000,  0.0000,  0.0000],
-                                                   [ 0.0000,  0.0000,  0.0000,  0.0000,  0.0000]],
-
-                                                  [[ 0.2996,  0.5738,  0.0000,  0.0000,  0.0000],
-                                                   [ 0.0000,  0.0000,  0.0000,  0.0000,  0.0000],
-                                                   [ 1.0910,  0.0000, -0.0037,  0.0000,  0.0000],
-                                                   [ 0.0000,  0.0000,  0.0000,  0.0000,  0.0000],
-                                                   [ 0.0000,  0.0000,  1.2939,  1.3469,  0.0000]],
-
-                                                  [[ 0.0000,  0.0000,  0.0000,  0.0000,  0.0000],
-                                                   [ 0.0000,  0.0000,  1.3531,  0.0000,  0.0000],
-                                                   [ 0.0000,  0.0000,  0.0000,  0.0000,  1.1186],
-                                                   [ 0.0000,  1.0479,  0.0000,  0.0000,  1.8761],
-                                                   [ 2.2015,  0.0000,  0.0000,  0.0000,  0.0000]],
-
-                                                  [[ 1.0358,  1.6584,  0.0000,  0.0000,  1.5641],
-                                                   [ 0.4032,  0.0000,  0.0000,  0.0000,  0.0000],
-                                                   [ 0.0000,  0.0000,  0.0000,  0.0000,  0.0000],
-                                                   [ 0.0000,  0.0000,  0.0000,  0.0000,  0.0000],
-                                                   [ 0.0000,  0.0000,  0.0000,  0.0000,  0.0000]]],
-
-
-                                                 [[[-1.2563,  0.0000,  1.0405,  0.0000,  0.7333],
-                                                   [ 2.0711,  0.0000,  0.0000,  0.0000,  1.1195],
-                                                   [ 0.0000,  0.0000,  1.0576,  0.0000,  0.0000],
-                                                   [ 1.2176,  0.0000,  0.0000,  0.0000,  0.0000],
-                                                   [ 0.0000,  0.3765,  0.0000,  1.8267,  0.0000]],
-
-                                                  [[ 1.2927,  0.0000,  0.0000,  0.8106,  0.0000],
-                                                   [ 0.7614,  0.0000,  0.0000,  0.0000,  0.0000],
-                                                   [ 0.0000,  0.0000,  0.0000,  0.0000,  0.0000],
-                                                   [ 0.0000,  0.0000,  0.0000,  0.0000,  0.0000],
-                                                   [ 0.0000,  0.0000,  0.0000,  0.0000,  0.0000]],
-
-                                                  [[ 0.0000,  1.8860,  0.0000,  0.0000,  0.0000],
-                                                   [ 0.0000,  2.2379,  0.0000,  0.0000,  1.4035],
-                                                   [ 0.0000,  0.0000,  0.0000,  0.0000,  0.0000],
-                                                   [ 0.4963,  0.0000,  0.0000,  0.0000,  0.0000],
-                                                   [ 0.0000,  2.5382,  0.0000,  1.9080,  0.0000]],
-
-                                                  [[ 0.5853,  1.9343,  0.0000,  2.1774,  0.0000],
-                                                   [ 0.0000,  0.0000,  0.0000,  2.4069,  0.0000],
-                                                   [ 0.0000,  0.0000,  0.0000,  0.0000,  0.0000],
-                                                   [ 0.5255,  0.2564,  0.0000,  1.5519,  0.0000],
-                                                   [ 0.0000,  0.0000,  0.0000,  0.0000,  0.0000]],
-
-                                                  [[ 0.0000,  0.0000,  0.0000,  0.0000,  0.0000],
-                                                   [ 1.2673,  0.0000,  0.0000,  0.0000,  0.0000],
-                                                   [ 0.0000,  1.3343,  0.0000,  0.0000,  0.0000],
-                                                   [ 0.0000,  0.0000,  0.0000,  0.0000,  0.0000],
-                                                   [ 0.0000,  0.0000,  0.0000,  0.0000,  0.0000]]]]).unsqueeze(0)
-            Assert.CheckEqual(tk2p1uCorrect, tk2p1u)
-
-            let tk2s3 = combo.tensor([[[[1.5542, 1.2910],
-                                            [1.5936, 1.0687]],
-                                 
-                                           [[1.6584, 1.5641],
-                                            [2.2015, 1.8761]]],
-                                 
-                                 
-                                          [[[2.0711, 1.1195],
-                                            [1.2176, 1.8941]],
-                                 
-                                           [[1.9343, 2.4069],
-                                            [0.5255, 1.5519]]]]).unsqueeze(0)
-            let tk2s3i = combo.tensor([[[[  6,  34],
-                                                    [ 21,  43]],
-                                         
-                                                   [[101, 104],
-                                                    [ 95,  94]]],
-                                         
-                                         
-                                                  [[[  5,   9],
-                                                    [ 15,  44]],
-                                         
-                                                   [[ 76,  83],
-                                                    [ 90,  93]]]], dtype=Dtype.Int32).unsqueeze(0)
-            let tk2s3u = dsharp.maxunpool3d(tk2s3, tk2s3i, 2, stride=3, outputSize=[1;2;5;5;5])
-            let tk2s3uCorrect = combo.tensor([[[[0.0000, 0.0000, 0.0000, 0.0000, 0.0000],
-                                                   [0.0000, 1.5542, 0.0000, 0.0000, 0.0000],
-                                                   [0.0000, 0.0000, 0.0000, 0.0000, 0.0000],
-                                                   [0.0000, 0.0000, 0.0000, 0.0000, 0.0000],
-                                                   [0.0000, 1.5936, 0.0000, 0.0000, 0.0000]],
-
-                                                  [[0.0000, 0.0000, 0.0000, 0.0000, 0.0000],
-                                                   [0.0000, 0.0000, 0.0000, 0.0000, 1.2910],
-                                                   [0.0000, 0.0000, 0.0000, 0.0000, 0.0000],
-                                                   [0.0000, 0.0000, 0.0000, 1.0687, 0.0000],
-                                                   [0.0000, 0.0000, 0.0000, 0.0000, 0.0000]],
-
-                                                  [[0.0000, 0.0000, 0.0000, 0.0000, 0.0000],
-                                                   [0.0000, 0.0000, 0.0000, 0.0000, 0.0000],
-                                                   [0.0000, 0.0000, 0.0000, 0.0000, 0.0000],
-                                                   [0.0000, 0.0000, 0.0000, 0.0000, 0.0000],
-                                                   [0.0000, 0.0000, 0.0000, 0.0000, 0.0000]],
-
-                                                  [[0.0000, 0.0000, 0.0000, 0.0000, 0.0000],
-                                                   [0.0000, 0.0000, 0.0000, 0.0000, 0.0000],
-                                                   [0.0000, 0.0000, 0.0000, 0.0000, 0.0000],
-                                                   [0.0000, 0.0000, 0.0000, 0.0000, 1.8761],
-                                                   [2.2015, 0.0000, 0.0000, 0.0000, 0.0000]],
-
-                                                  [[0.0000, 1.6584, 0.0000, 0.0000, 1.5641],
-                                                   [0.0000, 0.0000, 0.0000, 0.0000, 0.0000],
-                                                   [0.0000, 0.0000, 0.0000, 0.0000, 0.0000],
-                                                   [0.0000, 0.0000, 0.0000, 0.0000, 0.0000],
-                                                   [0.0000, 0.0000, 0.0000, 0.0000, 0.0000]]],
-
-
-                                                 [[[0.0000, 0.0000, 0.0000, 0.0000, 0.0000],
-                                                   [2.0711, 0.0000, 0.0000, 0.0000, 1.1195],
-                                                   [0.0000, 0.0000, 0.0000, 0.0000, 0.0000],
-                                                   [1.2176, 0.0000, 0.0000, 0.0000, 0.0000],
-                                                   [0.0000, 0.0000, 0.0000, 0.0000, 0.0000]],
-
-                                                  [[0.0000, 0.0000, 0.0000, 0.0000, 0.0000],
-                                                   [0.0000, 0.0000, 0.0000, 0.0000, 0.0000],
-                                                   [0.0000, 0.0000, 0.0000, 0.0000, 0.0000],
-                                                   [0.0000, 0.0000, 0.0000, 0.0000, 1.8941],
-                                                   [0.0000, 0.0000, 0.0000, 0.0000, 0.0000]],
-
-                                                  [[0.0000, 0.0000, 0.0000, 0.0000, 0.0000],
-                                                   [0.0000, 0.0000, 0.0000, 0.0000, 0.0000],
-                                                   [0.0000, 0.0000, 0.0000, 0.0000, 0.0000],
-                                                   [0.0000, 0.0000, 0.0000, 0.0000, 0.0000],
-                                                   [0.0000, 0.0000, 0.0000, 0.0000, 0.0000]],
-
-                                                  [[0.0000, 1.9343, 0.0000, 0.0000, 0.0000],
-                                                   [0.0000, 0.0000, 0.0000, 2.4069, 0.0000],
-                                                   [0.0000, 0.0000, 0.0000, 0.0000, 0.0000],
-                                                   [0.5255, 0.0000, 0.0000, 1.5519, 0.0000],
-                                                   [0.0000, 0.0000, 0.0000, 0.0000, 0.0000]],
-
-                                                  [[0.0000, 0.0000, 0.0000, 0.0000, 0.0000],
-                                                   [0.0000, 0.0000, 0.0000, 0.0000, 0.0000],
-                                                   [0.0000, 0.0000, 0.0000, 0.0000, 0.0000],
-                                                   [0.0000, 0.0000, 0.0000, 0.0000, 0.0000],
-                                                   [0.0000, 0.0000, 0.0000, 0.0000, 0.0000]]]]).unsqueeze(0)
-            Assert.CheckEqual(tk2s3uCorrect, tk2s3u)
-
-            let tk2s3p1 = combo.tensor([[[[ 0.4633,  0.4568],
-                                                [ 0.8156,  1.3066]],
-                                     
-                                               [[ 0.2996,  0.2835],
-                                                [ 2.0900,  1.2851]]],
-                                     
-                                     
-                                              [[[-1.2563,  1.0405],
-                                                [ 1.2176,  1.1689]],
-                                     
-                                               [[ 0.8200,  2.1774],
-                                                [ 0.5255,  1.7098]]]]).unsqueeze(0)
-            let tk2s3p1i = combo.tensor([[[[ 0,  2],
-                                                    [15, 17]],
-                                         
-                                                   [[50, 53],
-                                                    [90, 67]]],
-                                         
-                                         
-                                                  [[[ 0,  2],
-                                                    [15, 18]],
-                                         
-                                                   [[50, 78],
-                                                    [90, 88]]]], dtype=Dtype.Int32).unsqueeze(0)
-            let tk2s3p1u = dsharp.maxunpool3d(tk2s3p1, tk2s3p1i, 2, stride=3, padding=1, outputSize=[1;2;5;5;5])
-            let tk2s3p1uCorrect = combo.tensor([[[[ 0.4633,  0.0000,  0.4568,  0.0000,  0.0000],
-                                                   [ 0.0000,  0.0000,  0.0000,  0.0000,  0.0000],
-                                                   [ 0.0000,  0.0000,  0.0000,  0.0000,  0.0000],
-                                                   [ 0.8156,  0.0000,  1.3066,  0.0000,  0.0000],
-                                                   [ 0.0000,  0.0000,  0.0000,  0.0000,  0.0000]],
-
-                                                  [[ 0.0000,  0.0000,  0.0000,  0.0000,  0.0000],
-                                                   [ 0.0000,  0.0000,  0.0000,  0.0000,  0.0000],
-                                                   [ 0.0000,  0.0000,  0.0000,  0.0000,  0.0000],
-                                                   [ 0.0000,  0.0000,  0.0000,  0.0000,  0.0000],
-                                                   [ 0.0000,  0.0000,  0.0000,  0.0000,  0.0000]],
-
-                                                  [[ 0.2996,  0.0000,  0.0000,  0.2835,  0.0000],
-                                                   [ 0.0000,  0.0000,  0.0000,  0.0000,  0.0000],
-                                                   [ 0.0000,  0.0000,  0.0000,  0.0000,  0.0000],
-                                                   [ 0.0000,  0.0000,  1.2851,  0.0000,  0.0000],
-                                                   [ 0.0000,  0.0000,  0.0000,  0.0000,  0.0000]],
-
-                                                  [[ 0.0000,  0.0000,  0.0000,  0.0000,  0.0000],
-                                                   [ 0.0000,  0.0000,  0.0000,  0.0000,  0.0000],
-                                                   [ 0.0000,  0.0000,  0.0000,  0.0000,  0.0000],
-                                                   [ 2.0900,  0.0000,  0.0000,  0.0000,  0.0000],
-                                                   [ 0.0000,  0.0000,  0.0000,  0.0000,  0.0000]],
-
-                                                  [[ 0.0000,  0.0000,  0.0000,  0.0000,  0.0000],
-                                                   [ 0.0000,  0.0000,  0.0000,  0.0000,  0.0000],
-                                                   [ 0.0000,  0.0000,  0.0000,  0.0000,  0.0000],
-                                                   [ 0.0000,  0.0000,  0.0000,  0.0000,  0.0000],
-                                                   [ 0.0000,  0.0000,  0.0000,  0.0000,  0.0000]]],
-
-
-                                                 [[[-1.2563,  0.0000,  1.0405,  0.0000,  0.0000],
-                                                   [ 0.0000,  0.0000,  0.0000,  0.0000,  0.0000],
-                                                   [ 0.0000,  0.0000,  0.0000,  0.0000,  0.0000],
-                                                   [ 1.2176,  0.0000,  0.0000,  1.1689,  0.0000],
-                                                   [ 0.0000,  0.0000,  0.0000,  0.0000,  0.0000]],
-
-                                                  [[ 0.0000,  0.0000,  0.0000,  0.0000,  0.0000],
-                                                   [ 0.0000,  0.0000,  0.0000,  0.0000,  0.0000],
-                                                   [ 0.0000,  0.0000,  0.0000,  0.0000,  0.0000],
-                                                   [ 0.0000,  0.0000,  0.0000,  0.0000,  0.0000],
-                                                   [ 0.0000,  0.0000,  0.0000,  0.0000,  0.0000]],
-
-                                                  [[ 0.8200,  0.0000,  0.0000,  0.0000,  0.0000],
-                                                   [ 0.0000,  0.0000,  0.0000,  0.0000,  0.0000],
-                                                   [ 0.0000,  0.0000,  0.0000,  0.0000,  0.0000],
-                                                   [ 0.0000,  0.0000,  0.0000,  0.0000,  0.0000],
-                                                   [ 0.0000,  0.0000,  0.0000,  0.0000,  0.0000]],
-
-                                                  [[ 0.0000,  0.0000,  0.0000,  2.1774,  0.0000],
-                                                   [ 0.0000,  0.0000,  0.0000,  0.0000,  0.0000],
-                                                   [ 0.0000,  0.0000,  0.0000,  1.7098,  0.0000],
-                                                   [ 0.5255,  0.0000,  0.0000,  0.0000,  0.0000],
-                                                   [ 0.0000,  0.0000,  0.0000,  0.0000,  0.0000]],
-
-                                                  [[ 0.0000,  0.0000,  0.0000,  0.0000,  0.0000],
-                                                   [ 0.0000,  0.0000,  0.0000,  0.0000,  0.0000],
-                                                   [ 0.0000,  0.0000,  0.0000,  0.0000,  0.0000],
-                                                   [ 0.0000,  0.0000,  0.0000,  0.0000,  0.0000],
-                                                   [ 0.0000,  0.0000,  0.0000,  0.0000,  0.0000]]]]).unsqueeze(0)
-            Assert.CheckEqual(tk2s3p1uCorrect, tk2s3p1u)
-
+            let tk3r = tk3.avgpoolReverse3d(t, 3)
+            let tk3rCorrect = combo.full([2;2;6;6;6], 1.0/27.0)
+            printfn $"tk3r        = {tk3r}"
+            printfn $"tk3rCorrect        = {tk3rCorrect}"
+            Assert.True(tk3rCorrect.allclose(tk3r,0.01))
