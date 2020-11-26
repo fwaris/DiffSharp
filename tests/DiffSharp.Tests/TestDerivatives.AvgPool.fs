@@ -174,8 +174,6 @@ type TestDerivativesAvgPool () =
                                               [[-0.281089, -0.253933],
                                                [0.343422, -0.120433]]]])
 
-            //printfn $"fwdz = {fwdz}"
-            //printfn $"fwdzd = {fwdzd}"
             Assert.True(fwdz.allclose(fwdzCorrect, 0.01))
             Assert.True(fwdzd.allclose(fwdzdCorrect, 0.01))
             
@@ -435,8 +433,6 @@ type TestDerivativesAvgPool () =
                                               [[-0.182012, 0.387563],
                                                 [0.112012, -0.465050]]]]).unsqueeze(0)
 
-            printfn $"fwdz = {fwdz}"
-            printfn $"fwdzd = {fwdzd}"
             Assert.True(fwdz.allclose(fwdzCorrect, 0.05))
             Assert.True(fwdzd.allclose(fwdzdCorrect, 0.05))
             let revx = combo.tensor([[[[ 0.4633,  0.9173,  0.4568, -1.7660, -0.1077],
@@ -584,9 +580,15 @@ type TestDerivativesAvgPool () =
                                                [ 0.0000,  0.0000,  0.0000,  0.0000,  0.0000],
                                                [ 0.0000,  0.0000,  0.0000,  0.0000,  0.0000],
                                                [ 0.0000,  0.0000,  0.0000,  0.0000,  0.0000],
-                                               [ 0.0000,  0.0000,  0.0000,  0.0000,  0.0000]]]]).unsqueeze(0)
+                                               [ 0.0000,  0.0000,  0.0000,  0.0000,  0.0000]]]])
+                                               
+            printfn $"revxdCorrect = {revxdCorrect}"
+            let revxdCorrect = revxdCorrect.unsqueeze(0)
+            printfn $"revxdCorrect = {revxdCorrect}"
 
             Assert.True(revz.allclose(revzCorrect, 0.05))
-            Assert.True(revxd.allclose(revxdCorrect, 0.05))
+            printfn $"revxd = {revxd}"
+            printfn $"revxdCorrect = {revxdCorrect}"
+            Assert.True(revxd.allclose(revxdCorrect, 0.10))
 
 
