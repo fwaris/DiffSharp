@@ -738,10 +738,7 @@ type TorchRawTensor(tt: TorchTensor, shape: Shape, dtype: Dtype, device: Device)
         match dtype with 
         | Dtype.Bool | Dtype.Integral -> opNotSupported "AvgPoolReverse2D" dtype
         | _ ->
-        let resultt = 
-            tt.AvgPool2DBackward(originalInput.TorchTensor, int64s kernelSize, strides=int64s stride, 
-                paddings=int64s padding,
-                divisorOverride=int64 kernelSize.[0] * int64 kernelSize.[1])
+        let resultt = tt.AvgPool2DBackward(originalInput.TorchTensor, int64s kernelSize, strides=int64s stride, paddings=int64s padding)
         let result = t1.MakeLike(resultt, shape=originalInput.Shape)
         result
 
@@ -749,10 +746,7 @@ type TorchRawTensor(tt: TorchTensor, shape: Shape, dtype: Dtype, device: Device)
         match dtype with 
         | Dtype.Bool | Dtype.Integral -> opNotSupported "AvgPoolReverse3D" dtype
         | _ ->
-        let resultt =
-            tt.AvgPool3DBackward(originalInput.TorchTensor, int64s kernelSize, strides=int64s stride, 
-                paddings=int64s padding,
-                divisorOverride=int64 kernelSize.[0] * int64 kernelSize.[1] * int64 kernelSize.[2])
+        let resultt = tt.AvgPool3DBackward(originalInput.TorchTensor, int64s kernelSize, strides=int64s stride, paddings=int64s padding)
         let result = t1.MakeLike(resultt, shape=originalInput.Shape)
         result
 
