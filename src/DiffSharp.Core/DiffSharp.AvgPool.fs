@@ -17,8 +17,8 @@ module AvgPoolExtensions =
             Tensor.Op
                 { new UnaryOp() with 
                     member _.ComputeRaw(a) = a.AvgPool1D(kernelSize, stride, padding(* , ceil_mode, count_include_pad *))
-                    member _.Forward(fab, a, ad) = ad.avgpool1d(kernelSize, stride, padding(* , ceil_mode, count_include_pad *))
-                    member _.Reverse(a, td) = td.avgpoolReverse1d(a, kernelSize, stride, padding(* , ceil_mode, count_include_pad *))
+                    member t.Forward(fab, a, ad) = ad.avgpool1d(kernelSize, stride, padding(* , ceil_mode, count_include_pad *))
+                    member _.Reverse(fab, a, td) = td.avgpoolReverse1d(a, kernelSize, stride, padding(* , ceil_mode, count_include_pad *))
                  }
                  a
 
@@ -36,7 +36,7 @@ module AvgPoolExtensions =
                 { new UnaryOp() with 
                     member _.ComputeRaw(a) = a.AvgPoolReverse1D(originalInput.primalRaw, kernelSize, stride, padding(* , ceil_mode, count_include_pad *))
                     member _.Forward(fab, a, ad) = ad.avgpoolReverse1d(originalInput, kernelSize, stride, padding(* , ceil_mode, count_include_pad *))
-                    member _.Reverse(a, td) = td.avgpool1d(kernelSize, stride, padding(* , ceil_mode, count_include_pad *))
+                    member _.Reverse(fab, a, td) = td.avgpool1d(kernelSize, stride, padding(* , ceil_mode, count_include_pad *))
                  }
                  a
 
@@ -56,7 +56,7 @@ module AvgPoolExtensions =
                 { new UnaryOp() with 
                     member _.ComputeRaw(a) = a.AvgPool2D(kernelSizes, strides, paddings(* , ceil_mode, count_include_pad *))
                     member _.Forward(fab, a, ad) = ad.avgpool2d(kernelSizes=kernelSizes, strides=strides, paddings=paddings(* , ceil_mode=ceil_mode, count_include_pad=count_include_pad *))
-                    member _.Reverse(a, td) = td.avgpoolReverse2d(a, kernelSizes=kernelSizes, strides=strides, paddings=paddings(* , ceil_mode=ceil_mode, count_include_pad=count_include_pad *))
+                    member _.Reverse(fab, a, td) = td.avgpoolReverse2d(a, kernelSizes=kernelSizes, strides=strides, paddings=paddings(* , ceil_mode=ceil_mode, count_include_pad=count_include_pad *))
                  }
                  a
 
@@ -76,7 +76,7 @@ module AvgPoolExtensions =
                 { new UnaryOp() with 
                     member _.ComputeRaw(a) = a.AvgPoolReverse2D(originalInput.primalRaw, kernelSizes, strides, paddings(* , ceil_mode, count_include_pad *))
                     member _.Forward(fab, a, ad) = ad.avgpoolReverse2d(originalInput, kernelSizes=kernelSizes, strides=strides, paddings=paddings(* , ceil_mode=ceil_mode, count_include_pad=count_include_pad *))
-                    member _.Reverse(a, td) = td.avgpool2d(kernelSizes=kernelSizes, strides=strides, paddings=paddings(* , ceil_mode=ceil_mode, count_include_pad=count_include_pad *))
+                    member _.Reverse(fab, a, td) = td.avgpool2d(kernelSizes=kernelSizes, strides=strides, paddings=paddings(* , ceil_mode=ceil_mode, count_include_pad=count_include_pad *))
                  }
                  a
 
@@ -96,7 +96,7 @@ module AvgPoolExtensions =
                 { new UnaryOp() with 
                     member _.ComputeRaw(a) = a.AvgPool3D(kernelSizes, strides, paddings(* , ceil_mode, count_include_pad *))
                     member _.Forward(fab, a, ad) = ad.avgpool3d(kernelSizes=kernelSizes, strides=strides, paddings=paddings(* , ceil_mode=ceil_mode, count_include_pad=count_include_pad *))
-                    member _.Reverse(a, td) = td.avgpoolReverse3d(a, kernelSizes=kernelSizes, strides=strides, paddings=paddings(* , ceil_mode=ceil_mode, count_include_pad=count_include_pad *))
+                    member _.Reverse(fab, a, td) = td.avgpoolReverse3d(a, kernelSizes=kernelSizes, strides=strides, paddings=paddings(* , ceil_mode=ceil_mode, count_include_pad=count_include_pad *))
                  }
                  a
 
@@ -116,7 +116,7 @@ module AvgPoolExtensions =
                 { new UnaryOp() with 
                     member _.ComputeRaw(a) = a.AvgPoolReverse3D(originalInput.primalRaw, kernelSizes, strides, paddings(* , ceil_mode, count_include_pad *))
                     member _.Forward(fab, a, ad) = ad.avgpoolReverse3d(originalInput, kernelSizes=kernelSizes, strides=strides, paddings=paddings(* , ceil_mode=ceil_mode, count_include_pad=count_include_pad *))
-                    member _.Reverse(a, td) = td.avgpool3d(kernelSizes=kernelSizes, strides=strides, paddings=paddings(* , ceil_mode=ceil_mode, count_include_pad=count_include_pad *))
+                    member _.Reverse(fab, a, td) = td.avgpool3d(kernelSizes=kernelSizes, strides=strides, paddings=paddings(* , ceil_mode=ceil_mode, count_include_pad=count_include_pad *))
                  }
                  a
 
