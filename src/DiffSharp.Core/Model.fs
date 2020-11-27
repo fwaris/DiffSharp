@@ -197,6 +197,13 @@ type BaseModel() =
         let parameters = parameters |> Seq.toArray
         let names = defaultArg names (Seq.init (parameters.Length) (fun i -> sprintf "m__%s__%d" (Random.UUID()) i)) |> Seq.toArray
         if parameters.Length <> names.Length then failwithf "Expecting parameters.Length (%A) and names.Length (%A) to be same" parameters.Length names.Length
+        let (|Pair|_|) (x: obj) =
+            if Reflection.FSharpType.IsTuple (x.GetType()) then  
+                match Reflection.FSharpValue.GetTupleFields(x) with
+                | [| t1; t2 |] -> Some (t1,t2)
+                | _ -> None
+            else
+                None
         for p, n in Array.zip parameters names do
             match (box p) with
             | :? Parameter as p -> 
@@ -204,11 +211,9 @@ type BaseModel() =
             | :? BaseModel as mm ->
                 m.SubModelsDict.Add(n, mm)
                 m.parametersDict.add(mm.parametersDict.map(fun (nn, pp:Parameter) -> (n + "__" + nn, pp)))
-            | :? (Parameter * string) as pn -> 
-                let (p,n) = pn
+            | Pair ((:? Parameter as p), (:? string as n))  -> 
                 m.parametersDict.add(n, p)
-            | :? (BaseModel * string) as mmn -> 
-                let (mm,n) = mmn
+            | Pair ((:? BaseModel as mm), (:? string as n))  -> 
                 m.SubModelsDict.Add(n, mm)
                 m.parametersDict.add(mm.parametersDict.map(fun (nn, pp:Parameter) -> (n + "__" + nn, pp)))
             | t -> failwithf "Unsupported type %A. Expecting a Parameter or Model" (t.GetType())
@@ -223,7 +228,8 @@ type BaseModel() =
     member m.noDiff() = m.parametersDict.noDiff()
 
     /// <summary>TBD</summary>
-    member m.move(?dtype, ?device, ?backend) = m.parametersDict.move(?dtype=dtype, ?device=device, ?backend=backend)
+    member m.move(?dtype, ?device, ?backend) =
+        m.parametersDict.move(?dtype=dtype, ?device=device, ?backend=backend)
 
     /// <summary>TBD</summary>
     member m.nparameters = m.parametersDict.nelement

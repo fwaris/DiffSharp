@@ -28,10 +28,15 @@ type Shape internal (values: int[], dims: Int[]) =
     /// Creates a possibly-symbolic shape from an array of possibly-symbolic integers
     new (dims: seq<Int>) =
         // assert all are either syntactically -1 placeholders or constrained > 0
-        let arr = Seq.toArrayQuick dims
-        for d in arr do
+        let dims = Seq.toArrayQuick dims
+        for d in dims do
             if not (d = Int -1 || d >~ 0I) then failwithf "The shape dimension '%O' is zero or negative. Shape dimensions must be positive, or else the indicator -1." d
-        Shape(null, arr)
+        let vs = dims |> Array.map (fun dim -> dim.TryGetValue())
+        if vs |> Array.forall (fun v -> v.IsSome) then
+            let values = vs |> Array.map (fun v -> v.Value)
+            Shape(values, null)
+        else 
+            Shape(null, dims)
 
     /// Get the number of dimensions in the shape
     member _.Length =
