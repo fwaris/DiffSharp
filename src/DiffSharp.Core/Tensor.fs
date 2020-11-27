@@ -2263,24 +2263,7 @@ type Tensor =
 
     /// This internal member is exposed as public in DiffSharp.ShapeChecking to keep the default API free of 'Int' and 'Shape'
     member internal a.maxpool2dix(?kernelSize:Int, ?stride:Int, ?padding:Int, ?kernelSizes:seq<Int>, ?strides:seq<Int>, ?paddings:seq<Int>) =
-        let kernelSizes =
-            match kernelSize, kernelSizes with
-            | Some _, Some _ -> failwithf "Expecting only one of kernelSize, kernelSizes"
-            | Some k, None -> [|k; k|]
-            | None, Some k -> let k = k |> Seq.toArrayQuick in if k.Length <> 2 then failwithf "Expecting kernelSizes to be 2-dimensional" else k
-            | _ -> failwithf "Expecting either kernelSize or kernelSizes"
-        let strides =
-            match stride, strides with
-            | Some _, Some _ -> failwithf "Expecting only one of stride, strides"
-            | Some s, None -> [|s; s|]
-            | None, Some s -> let s = s |> Seq.toArrayQuick in if s.Length <> 2 then failwithf "Expecting strides to be 2-dimensional" else s
-            | _ -> kernelSizes
-        let paddings =
-            match padding, paddings with
-            | Some _, Some _ -> failwithf "Expecting only one of padding, paddings"
-            | Some p, None -> [|p; p|]
-            | None, Some p -> let p = p |> Seq.toArrayQuick in if p.Length <> 2 then failwithf "Expecting paddings to be 2-dimensional" else p
-            | _ -> [|0I; 0I|]
+        let kernelSizes, strides, paddings = Shape.resolve2dMaxPoolSizes kernelSize kernelSizes stride strides padding paddings
         Shape.checkCanMaxpool2d a.dtype a.shapex kernelSizes strides paddings  |> ignore
         match a with
         | Tensor0(ap)          -> let result, indices = ap.MaxPool2D(kernelSizes, strides, paddings) in Tensor0(result), Tensor0(indices)
@@ -2310,24 +2293,7 @@ type Tensor =
 
     /// This internal member is exposed as public in DiffSharp.ShapeChecking to keep the default API free of 'Int' and 'Shape'
     member internal a.maxunpool2dx(indices:Tensor, ?kernelSize:Int, ?stride:Int, ?padding:Int, ?kernelSizes:seq<Int>, ?strides:seq<Int>, ?paddings:seq<Int>, ?outputSize:seq<Int>) =
-        let kernelSizes =
-            match kernelSize, kernelSizes with
-            | Some _, Some _ -> failwithf "Expecting only one of kernelSize, kernelSizes"
-            | Some k, None -> [|k; k|]
-            | None, Some k -> let k = k |> Seq.toArrayQuick in if k.Length <> 2 then failwithf "Expecting kernelSizes to be 2-dimensional" else k
-            | _ -> failwithf "Expecting either kernelSize or kernelSizes"
-        let strides =
-            match stride, strides with
-            | Some _, Some _ -> failwithf "Expecting only one of stride, strides"
-            | Some s, None -> [|s; s|]
-            | None, Some s -> let s = s |> Seq.toArrayQuick in if s.Length <> 2 then failwithf "Expecting strides to be 2-dimensional" else s
-            | _ -> kernelSizes
-        let paddings =
-            match padding, paddings with
-            | Some _, Some _ -> failwithf "Expecting only one of padding, paddings"
-            | Some p, None -> [|p; p|]
-            | None, Some p -> let p = p |> Seq.toArrayQuick in if p.Length <> 2 then failwithf "Expecting paddings to be 2-dimensional" else p
-            | _ -> [|0I; 0I|]
+        let kernelSizes, strides, paddings = Shape.resolve2dMaxPoolSizes kernelSize kernelSizes stride strides padding paddings
         let outputSize = 
             match outputSize with
             | Some o -> let o = o |> Seq.toArrayQuick in if o.Length <> 4 then failwithf "Expecting outputSize to be 4-dimensional" else o
@@ -2354,24 +2320,7 @@ type Tensor =
 
     /// This internal member is exposed as public in DiffSharp.ShapeChecking to keep the default API free of 'Int' and 'Shape'
     member internal a.maxpool3dix(?kernelSize:Int, ?stride:Int, ?padding:Int, ?kernelSizes:seq<Int>, ?strides:seq<Int>, ?paddings:seq<Int>) =
-        let kernelSizes =
-            match kernelSize, kernelSizes with
-            | Some _, Some _ -> failwithf "Expecting only one of kernelSize, kernelSizes"
-            | Some k, None -> [|k; k; k|]
-            | None, Some k -> let k = k |> Seq.toArrayQuick in if k.Length <> 3 then failwithf "Expecting kernelSizes to be 3-dimensional" else k
-            | _ -> failwithf "Expecting either kernelSize or kernelSizes"
-        let strides =
-            match stride, strides with
-            | Some _, Some _ -> failwithf "Expecting only one of stride, strides"
-            | Some s, None -> [|s; s; s|]
-            | None, Some s -> let s = s |> Seq.toArrayQuick in if s.Length <> 3 then failwithf "Expecting strides to be 3-dimensional" else s
-            | _ -> kernelSizes
-        let paddings =
-            match padding, paddings with
-            | Some _, Some _ -> failwithf "Expecting only one of padding, paddings"
-            | Some p, None -> [|p; p; p|]
-            | None, Some p -> let p = p |> Seq.toArrayQuick in if p.Length <> 3 then failwithf "Expecting paddings to be 3-dimensional" else p
-            | _ -> [|0I; 0I; 0I|]
+        let kernelSizes, strides, paddings = Shape.resolve3dMaxPoolSizes kernelSize kernelSizes stride strides padding paddings
         Shape.checkCanMaxpool3d a.dtype a.shapex kernelSizes strides paddings |> ignore
         match a with
         | Tensor0(ap)          -> let result, indices = ap.MaxPool3D(kernelSizes, strides, paddings) in Tensor0(result), Tensor0(indices)
@@ -2401,24 +2350,7 @@ type Tensor =
 
     /// This internal member is exposed as public in DiffSharp.ShapeChecking to keep the default API free of 'Int' and 'Shape'
     member internal a.maxunpool3dx(indices:Tensor, ?kernelSize:Int, ?stride:Int, ?padding:Int, ?kernelSizes:seq<Int>, ?strides:seq<Int>, ?paddings:seq<Int>, ?outputSize:seq<Int>) =
-        let kernelSizes =
-            match kernelSize, kernelSizes with
-            | Some _, Some _ -> failwithf "Expecting only one of kernelSize, kernelSizes"
-            | Some k, None -> [|k; k; k|]
-            | None, Some k -> let k = k |> Seq.toArrayQuick in if k.Length <> 3 then failwithf "Expecting kernelSizes to be 3-dimensional" else k
-            | _ -> failwithf "Expecting either kernelSize or kernelSizes"
-        let strides =
-            match stride, strides with
-            | Some _, Some _ -> failwithf "Expecting only one of stride, strides"
-            | Some s, None -> [|s; s; s|]
-            | None, Some s -> let s = s |> Seq.toArrayQuick in if s.Length <> 3 then failwithf "Expecting strides to be 3-dimensional" else s
-            | _ -> kernelSizes
-        let paddings =
-            match padding, paddings with
-            | Some _, Some _ -> failwithf "Expecting only one of padding, paddings"
-            | Some p, None -> [|p; p; p|]
-            | None, Some p -> let p = p |> Seq.toArrayQuick in if p.Length <> 3 then failwithf "Expecting paddings to be 3-dimensional" else p
-            | _ -> [|0I; 0I; 0I|]
+        let kernelSizes, strides, paddings = Shape.resolve3dMaxPoolSizes kernelSize kernelSizes stride strides padding paddings
         let outputSize = 
             match outputSize with
             | Some o -> let o = o |> Seq.toArrayQuick in if o.Length <> 5 then failwithf "Expecting outputSize to be 5-dimensional" else o
@@ -2555,24 +2487,7 @@ type Tensor =
     /// This internal member is exposed as public in DiffSharp.ShapeChecking to keep the default API free of 'Int' and 'Shape'
     member internal a.conv2dx(filters:Tensor, ?stride:Int, ?padding:Int, ?dilation:Int, ?strides:seq<Int>, ?paddings:seq<Int>, ?dilations:seq<Int>) =
         let b = filters
-        let strides = 
-            match stride, strides with
-            | Some _, Some _ -> failwithf "Expecting only one of stride, strides"
-            | Some s, None -> [|s; s|]
-            | None, Some s -> let s = s |> Seq.toArrayQuick in if s.Length <> 2 then failwithf "Expecting strides to be 2-dimensional" else s
-            | _ -> [|1I; 1I|]
-        let paddings = 
-            match padding, paddings with
-            | Some _ , Some _ -> failwithf "Expecting only one of padding, paddings"
-            | Some p, None -> [|p; p|]
-            | None, Some p -> let p = p |> Seq.toArrayQuick in if p.Length <> 2 then failwithf "Expecting paddings to be 2-dimensional" else p
-            | _ -> [|0I; 0I|]
-        let dilations = 
-            match dilation, dilations with
-            | Some _ , Some _ -> failwithf "Expecting only one of dilation, dilations"
-            | Some d, None -> [|d; d|]
-            | None, Some d -> let d = d |> Seq.toArrayQuick in if d.Length <> 2 then failwithf "Expecting dilations to be 2-dimensional" else d
-            | _ -> [|1I; 1I|]
+        let strides, paddings, dilations = Shape.resolve2dConvSizes stride strides padding paddings dilation dilations
         Shape.checkCanConv2d a.deviceType b.deviceType a.dtype b.dtype a.shapex b.shapex strides paddings dilations |> ignore
         let mutable b = b
         if a.symbolic || dilations.[0].Value > 1 || dilations.[1].Value > 1 then
@@ -2660,31 +2575,8 @@ type Tensor =
     /// This internal member is exposed as public in DiffSharp.ShapeChecking to keep the default API free of 'Int' and 'Shape'
     member internal a.convTranspose2dx(filters:Tensor, ?stride:Int, ?padding:Int, ?dilation:Int, ?outputPadding:Int, ?strides:seq<Int>, ?paddings:seq<Int>, ?dilations:seq<Int>, ?outputPaddings:seq<Int>) =
         let b = filters
-        let strides = 
-            match stride, strides with
-            | Some _, Some _ -> failwithf "Expecting only one of stride, strides"
-            | Some s, None -> [|s; s|]
-            | None, Some s -> let s = s |> Seq.toArrayQuick in if s.Length <> 2 then failwithf "Expecting strides to be 2-dimensional" else s
-            | _ -> [|1I; 1I|]
-        let paddings = 
-            match padding, paddings with
-            | Some _ , Some _ -> failwithf "Expecting only one of padding, paddings"
-            | Some p, None -> [|p; p|]
-            | None, Some p -> let p = p |> Seq.toArrayQuick in if p.Length <> 2 then failwithf "Expecting paddings to be 2-dimensional" else p
-            | _ -> [|0I; 0I|]
-        let dilations = 
-            match dilation, dilations with
-            | Some _ , Some _ -> failwithf "Expecting only one of dilation, dilations"
-            | Some d, None -> [|d; d|]
-            | None, Some d -> let d = d |> Seq.toArrayQuick in if d.Length <> 2 then failwithf "Expecting dilations to be 2-dimensional" else d
-            | _ -> [|1I; 1I|]
-        let outputPaddings = 
-            match outputPadding, outputPaddings with
-            | Some _ , Some _ -> failwithf "Expecting only one of outputPadding, outputPaddings"
-            | Some p, None -> [|p; p|]
-            | None, Some p -> let p = p |> Seq.toArrayQuick in if p.Length <> 2 then failwithf "Expecting outputPaddings to be 2-dimensional" else p
-            | _ -> [|0I; 0I|]
-
+        let strides, paddings, dilations = Shape.resolve2dConvSizes stride strides padding paddings dilation dilations
+        let outputPaddings = Shape.resolve2dConvOutputPadding outputPadding outputPaddings
         let _, _, _, _, outputShape =
             Shape.checkCanConvTranspose2d a.deviceType b.deviceType a.dtype b.dtype a.shapex b.shapex strides paddings dilations outputPaddings
         let mutable b = b
@@ -2709,24 +2601,7 @@ type Tensor =
 
     member a.conv3dx(filters:Tensor, ?stride:Int, ?padding:Int, ?dilation:Int, ?strides:seq<Int>, ?paddings:seq<Int>, ?dilations:seq<Int>) =
         let b = filters
-        let strides = 
-            match stride, strides with
-            | Some _ , Some _ -> failwithf "Expecting only one of stride, strides"
-            | Some s, None -> [|s; s; s|]
-            | None, Some s -> let s = s |> Seq.toArrayQuick in if s.Length <> 3 then failwithf "Expecting strides to be 3-dimensional" else s
-            | _ -> [|1I; 1I; 1I|]
-        let paddings = 
-            match padding, paddings with
-            | Some _ , Some _ -> failwithf "Expecting only one of padding, paddings"
-            | Some p, None -> [|p; p; p|]
-            | None, Some p -> let p = p |> Seq.toArrayQuick in if p.Length <> 3 then failwithf "Expecting paddings to be 3-dimensional" else p
-            | _ -> [|0I; 0I; 0I|]
-        let dilations = 
-            match dilation, dilations with
-            | Some _ , Some _ -> failwithf "Expecting only one of dilation, dilations"
-            | Some d, None -> [|d; d; d|]
-            | None, Some d -> let d = d |> Seq.toArrayQuick in if d.Length <> 3 then failwithf "Expecting dilations to be 3-dimensional" else d
-            | _ -> [|1I; 1I; 1I|]
+        let strides, paddings, dilations = Shape.resolve3dConvSizes stride strides padding paddings dilation dilations
         Shape.checkCanConv3d a.deviceType b.deviceType a.dtype b.dtype a.shapex b.shapex strides paddings dilations |> ignore
         let mutable b = b
         if a.symbolic || dilations.[0].Value > 1 || dilations.[1].Value > 1 || dilations.[2].Value > 1 then
@@ -2821,31 +2696,8 @@ type Tensor =
     /// This internal member is exposed as public in DiffSharp.ShapeChecking to keep the default API free of 'Int' and 'Shape'
     member internal a.convTranspose3dx(filters:Tensor, ?stride:Int, ?padding:Int, ?dilation:Int, ?outputPadding:Int, ?strides:seq<Int>, ?paddings:seq<Int>, ?dilations:seq<Int>, ?outputPaddings:seq<Int>) =
         let b = filters
-        let strides = 
-            match stride, strides with
-            | Some _ , Some _ -> failwithf "Expecting only one of stride, strides"
-            | Some s, None -> [|s; s; s|]
-            | None, Some s -> let s = s |> Seq.toArrayQuick in if s.Length <> 3 then failwithf "Expecting strides to be 3-dimensional" else s
-            | _ -> [|1I; 1I; 1I|]
-        let paddings = 
-            match padding, paddings with
-            | Some _ , Some _ -> failwithf "Expecting only one of padding, paddings"
-            | Some p, None -> [|p; p; p|]
-            | None, Some p -> let p = p |> Seq.toArrayQuick in if p.Length <> 3 then failwithf "Expecting paddings to be 3-dimensional" else p
-            | _ -> [|0I; 0I; 0I|]
-        let dilations = 
-            match dilation, dilations with
-            | Some _ , Some _ -> failwithf "Expecting only one of dilation, dilations"
-            | Some d, None -> [|d; d; d|]
-            | None, Some d -> let d = d |> Seq.toArrayQuick in if d.Length <> 3 then failwithf "Expecting dilations to be 3-dimensional" else d
-            | _ -> [|1I; 1I; 1I|]
-        let outputPaddings = 
-            match outputPadding, outputPaddings with
-            | Some _ , Some _ -> failwithf "Expecting only one of outputPadding, outputPaddings"
-            | Some p, None -> [|p; p; p|]
-            | None, Some p -> let p = p |> Seq.toArrayQuick in if p.Length <> 3 then failwithf "Expecting outputPaddings to be 3-dimensional" else p
-            | _ -> [|0I; 0I; 0I|]
-
+        let strides, paddings, dilations = Shape.resolve3dConvSizes stride strides padding paddings dilation dilations
+        let outputPaddings = Shape.resolve3dConvOutputPadding outputPadding outputPaddings
         let _, _, _, _, outputShape =
             Shape.checkCanConvTranspose3d a.deviceType b.deviceType a.dtype b.dtype a.shapex b.shapex strides paddings dilations outputPaddings
         let mutable b = b

@@ -375,12 +375,7 @@ type Conv1d(inChannels:Int, outChannels:Int, kernelSize:Int, ?stride:Int, ?paddi
 /// <summary>A model that applies a 2D convolution over an input signal composed of several input planes</summary>
 type Conv2d(inChannels:Int, outChannels:Int, ?kernelSize:Int, ?stride:Int, ?padding:Int, ?dilation:Int, ?kernelSizes:seq<Int>, ?strides:seq<Int>, ?paddings:seq<Int>, ?dilations:seq<Int>, ?bias:bool, ?activation: (Tensor->Tensor)) =
     inherit Model()
-    let kernelSizes = 
-        match kernelSize, kernelSizes with
-        | Some _ , Some _ -> failwithf "Expecting only one of kernelSize, kernelSizes"
-        | Some k, None -> [|k; k|]
-        | None, Some k -> let k = k |> Array.ofSeq in if k.Length <> 2 then failwithf "Expecting kernelSizes to have length two" else k
-        | _ -> [|1I; 1I|]
+    let kernelSizes = Shape.resolve2dKernelSizes kernelSize kernelSizes
     let bias = defaultArg bias true
     let activation = defaultArg activation id
     let k = 1./ sqrt (float (inChannels*kernelSizes.[0]*kernelSizes.[1]).ValueOrOne)
@@ -404,12 +399,7 @@ type Conv2d(inChannels:Int, outChannels:Int, ?kernelSize:Int, ?stride:Int, ?padd
 /// <summary>A model that applies a 3D convolution over an input signal composed of several input planes</summary>
 type Conv3d(inChannels:Int, outChannels:Int, ?kernelSize:Int, ?stride:Int, ?padding:Int, ?dilation:Int, ?kernelSizes:seq<Int>, ?strides:seq<Int>, ?paddings:seq<Int>, ?dilations:seq<Int>, ?bias:bool, ?activation: (Tensor->Tensor)) =
     inherit Model()
-    let kernelSizes = 
-        match kernelSize, kernelSizes with
-        | Some _ , Some _ -> failwithf "Expecting only one of kernelSize, kernelSizes"
-        | Some k, None -> [|k; k; k|]
-        | None, Some k -> let k = k |> Array.ofSeq in if k.Length <> 3 then failwithf "Expecting kernelSizes to have length three" else k
-        | _ -> [|1I; 1I; 1I|]
+    let kernelSizes = Shape.resolve3dKernelSizes kernelSize kernelSizes
     let bias = defaultArg bias true
     let activation = defaultArg activation id
     let k = 1./ sqrt (float (inChannels.ValueOrOne*kernelSizes.[0]*kernelSizes.[1]*kernelSizes.[2]).ValueOrOne)
@@ -455,12 +445,7 @@ type ConvTranspose1d(inChannels:Int, outChannels:Int, kernelSize:Int, ?stride:In
 /// <summary>A model that applies a 2D transposed convolution operator over an input image composed of several input planes.</summary>
 type ConvTranspose2d(inChannels:Int, outChannels:Int, ?kernelSize:Int, ?stride:Int, ?padding:Int, ?outputPadding:Int, ?dilation:Int, ?kernelSizes:seq<Int>, ?strides:seq<Int>, ?paddings:seq<Int>, ?dilations:seq<Int>, ?bias:bool, ?outputPaddings:seq<Int>) =
     inherit Model()
-    let kernelSizes = 
-        match kernelSize, kernelSizes with
-        | Some _ , Some _ -> failwithf "Expecting only one of kernelSize, kernelSizes"
-        | Some k, None -> [|k; k|]
-        | None, Some k -> let k = k |> Array.ofSeq in if k.Length <> 2 then failwithf "Expecting kernelSizes to have length two" else k
-        | _ -> [|1I; 1I|]
+    let kernelSizes = Shape.resolve2dKernelSizes kernelSize kernelSizes
     let bias = defaultArg bias true
     let k = 1./ sqrt (float (inChannels*kernelSizes.[0]*kernelSizes.[1]).ValueOrOne)
     let w = Parameter <| Weight.uniform([inChannels; outChannels; kernelSizes.[0]; kernelSizes.[1]], k)
@@ -482,12 +467,7 @@ type ConvTranspose2d(inChannels:Int, outChannels:Int, ?kernelSize:Int, ?stride:I
 /// <summary>A model that applies a 3D transposed convolution operator over an input image composed of several input planes.</summary>
 type ConvTranspose3d(inChannels:Int, outChannels:Int, ?kernelSize:Int, ?stride:Int, ?padding:Int, ?dilation:Int, ?outputPadding:Int, ?kernelSizes:seq<Int>, ?strides:seq<Int>, ?paddings:seq<Int>, ?outputPaddings:seq<Int>, ?dilations:seq<Int>, ?bias:bool) =
     inherit Model()
-    let kernelSizes = 
-        match kernelSize, kernelSizes with
-        | Some _ , Some _ -> failwithf "Expecting only one of kernelSize, kernelSizes"
-        | Some k, None -> [|k; k; k|]
-        | None, Some k -> let k = k |> Array.ofSeq in if k.Length <> 3 then failwithf "Expecting kernelSizes to have length three" else k
-        | _ -> [|1I; 1I; 1I|]
+    let kernelSizes = Shape.resolve3dKernelSizes kernelSize kernelSizes
     let bias = defaultArg bias true
     let k = 1./ sqrt (float (inChannels*kernelSizes.[0]*kernelSizes.[1]*kernelSizes.[2]).ValueOrOne)
     let w = Parameter <| Weight.uniform([inChannels; outChannels; kernelSizes.[0]; kernelSizes.[1]; kernelSizes.[2]], k)
